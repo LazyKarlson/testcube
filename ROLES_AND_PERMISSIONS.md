@@ -7,6 +7,7 @@ This application implements a comprehensive Role-Based Access Control (RBAC) sys
 **Important**: Posts and comments have **public read access** without authentication:
 
 ✅ **Public Endpoints** (No authentication required):
+- `GET /api/meta/roles` - List all roles with permissions
 - `GET /api/posts` - List all posts
 - `GET /api/posts/search` - Search posts
 - `GET /api/posts/{id}` - View single post
@@ -109,10 +110,11 @@ GET /api/user
 
 ### Role Management Endpoints
 
-#### Get All Roles
+#### Get All Roles (Public access)
 ```bash
-GET /api/roles
-Authorization: Bearer {token}
+GET /api/meta/roles
+# No authentication required
+# Rate limit: 60 requests/minute
 ```
 
 **Response:**
@@ -123,12 +125,76 @@ Authorization: Bearer {token}
       "id": 1,
       "name": "admin",
       "description": "Administrator with full access",
-      "permissions": ["create_posts", "read_posts", ...]
+      "permissions": [
+        "create_posts",
+        "read_posts",
+        "update_posts",
+        "delete_posts",
+        "create_comments",
+        "read_comments",
+        "update_comments",
+        "delete_comments",
+        "create_users",
+        "read_users",
+        "update_users",
+        "delete_users"
+      ]
     },
-    ...
+    {
+      "id": 2,
+      "name": "editor",
+      "description": "Editor can manage posts and comments",
+      "permissions": [
+        "create_posts",
+        "read_posts",
+        "update_posts",
+        "delete_posts",
+        "create_comments",
+        "read_comments",
+        "update_comments",
+        "delete_comments"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "author",
+      "description": "Author can manage only their own posts and comments",
+      "permissions": [
+        "create_posts",
+        "read_posts",
+        "update_posts",
+        "delete_posts",
+        "create_comments",
+        "read_comments",
+        "update_comments",
+        "delete_comments"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "viewer",
+      "description": "Viewer can only read posts and comments",
+      "permissions": [
+        "read_posts",
+        "read_comments"
+      ]
+    }
   ]
 }
 ```
+
+**Example:**
+```bash
+curl -X GET http://localhost:85/api/meta/roles
+```
+
+#### Get All Roles (Authenticated)
+```bash
+GET /api/roles
+Authorization: Bearer {token}
+```
+
+**Response:** Same as `/api/meta/roles`
 
 #### Get User's Roles
 ```bash
@@ -542,9 +608,10 @@ curl -X POST http://localhost:85/api/users/5/roles \
 $user->hasRole('admin'); // true/false
 $user->hasRole(['admin', 'editor']); // true if has any
 
-// Check if user has permission
-$user->hasPermission('create_posts'); // true/false
-$user->can('create', 'posts'); // true/false
+// Check if user has permission (multiple formats)
+$user->hasPermission('create_posts'); // true/false - direct permission check
+$user->can('create', 'posts'); // true/false - action + resource format
+$user->can('create_posts'); // true/false - full permission name format
 
 // Assign/remove roles
 $user->assignRole('editor');
@@ -556,6 +623,8 @@ $user->isEditor(); // true/false
 $user->isAuthor(); // true/false
 $user->isViewer(); // true/false
 ```
+
+**Note**: The `can()` method is fully compatible with Laravel's `Illuminate\Foundation\Auth\User::can()` signature and supports multiple formats. See `USER_CAN_METHOD.md` for detailed documentation.
 
 ### Role Model Methods
 

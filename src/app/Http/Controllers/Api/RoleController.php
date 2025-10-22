@@ -10,12 +10,31 @@ use Illuminate\Http\Request;
 class RoleController extends Controller
 {
     /**
-     * Get all roles with their permissions
+     * Get all roles (public endpoint for metadata)
+     */
+    public function metaRoles()
+    {
+        $roles = Role::with('permissions')->get();
+
+        return response()->json([
+            'roles' => $roles->map(function ($role) {
+                return [
+                    'id' => $role->id,
+                    'name' => $role->name,
+                    'description' => $role->description,
+                    'permissions' => $role->permissions->pluck('name'),
+                ];
+            }),
+        ]);
+    }
+
+    /**
+     * Get all roles with their permissions (authenticated endpoint)
      */
     public function index()
     {
         $roles = Role::with('permissions')->get();
-        
+
         return response()->json([
             'roles' => $roles->map(function ($role) {
                 return [

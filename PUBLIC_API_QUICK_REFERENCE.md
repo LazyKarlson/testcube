@@ -2,6 +2,12 @@
 
 ## Public Endpoints (No Authentication Required)
 
+### Meta
+
+| Endpoint | Method | Description | Rate Limit |
+|----------|--------|-------------|------------|
+| `/api/meta/roles` | GET | List all roles | 60/min |
+
 ### Posts
 
 | Endpoint | Method | Description | Rate Limit |
@@ -20,6 +26,11 @@
 ---
 
 ## Quick Examples
+
+### Get All Roles
+```bash
+curl -X GET http://localhost:85/api/meta/roles
+```
 
 ### List Posts
 ```bash
@@ -106,6 +117,7 @@ try {
 ## Access Control
 
 ### ✅ Public (No Auth)
+- List roles
 - List posts
 - Search posts
 - View post

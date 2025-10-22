@@ -10,6 +10,9 @@ Posts and comments now have public read-only access without authentication, prot
 
 ### 1. Public Endpoints
 
+**Meta** (Read-only, no authentication required):
+- ✅ `GET /api/meta/roles` - List all roles with permissions
+
 **Posts** (Read-only, no authentication required):
 - ✅ `GET /api/posts` - List all posts with pagination
 - ✅ `GET /api/posts/search` - Search posts with filters
@@ -43,11 +46,14 @@ Posts and comments now have public read-only access without authentication, prot
 **Public routes group**:
 ```php
 Route::middleware('throttle:60,1')->group(function () {
+    // Meta - public metadata
+    Route::get('/meta/roles', [RoleController::class, 'metaRoles']);
+
     // Posts - public read access
     Route::get('/posts', [PostController::class, 'index']);
     Route::get('/posts/search', [PostController::class, 'search']);
     Route::get('/posts/{post}', [PostController::class, 'show']);
-    
+
     // Comments - public read access
     Route::get('/posts/{post}/comments', [CommentController::class, 'index']);
     Route::get('/comments/{comment}', [CommentController::class, 'show']);
@@ -61,6 +67,7 @@ Route::middleware('throttle:60,1')->group(function () {
 ### Public Access (No Authentication)
 
 ✅ **Allowed**:
+- List all roles
 - List all posts
 - Search posts
 - View single post
@@ -86,6 +93,9 @@ Route::middleware('throttle:60,1')->group(function () {
 ### Public Access (No Token)
 
 ```bash
+# Get all roles
+curl -X GET http://localhost:85/api/meta/roles
+
 # List posts
 curl -X GET http://localhost:85/api/posts
 

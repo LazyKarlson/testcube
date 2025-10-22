@@ -19,6 +19,9 @@ Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
 
 // Public read-only routes with rate limiting (60 requests per minute)
 Route::middleware('throttle:60,1')->group(function () {
+    // Meta - public metadata
+    Route::get('/meta/roles', [RoleController::class, 'metaRoles']);
+
     // Posts - public read access
     Route::get('/posts', [PostController::class, 'index']);
     Route::get('/posts/search', [PostController::class, 'search']);

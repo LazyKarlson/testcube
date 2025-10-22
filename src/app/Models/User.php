@@ -144,11 +144,27 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Check if user can perform action on resource.
+     * Compatible with Laravel's can() method signature.
+     *
+     * @param mixed $abilities Can be a string permission, or action_resource format
+     * @param array|mixed $arguments Optional arguments (resource name if first param is action)
+     * @return bool
      */
-    public function can(string $action, string $resource): bool
+    public function can($abilities, $arguments = []): bool
     {
-        $permission = "{$action}_{$resource}";
-        return $this->hasPermission($permission);
+        // If called with two string arguments (action, resource), convert to permission format
+        if (is_string($abilities) && is_string($arguments)) {
+            $permission = "{$abilities}_{$arguments}";
+            return $this->hasPermission($permission);
+        }
+
+        // If called with a single permission string
+        if (is_string($abilities) && empty($arguments)) {
+            return $this->hasPermission($abilities);
+        }
+
+        // Fall back to parent implementation for other cases (Laravel's Gate system)
+        return parent::can($abilities, $arguments);
     }
 
     /**

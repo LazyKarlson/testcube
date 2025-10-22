@@ -8,6 +8,14 @@ The API provides public read-only access to posts and comments without requiring
 
 ## Public Endpoints
 
+### Meta (Read-Only)
+
+Metadata endpoints for application information:
+
+| Endpoint | Method | Description | Rate Limit |
+|----------|--------|-------------|------------|
+| `/api/meta/roles` | GET | List all roles with permissions | 60/min |
+
 ### Posts (Read-Only)
 
 All post read endpoints are publicly accessible:
@@ -84,6 +92,12 @@ X-RateLimit-Reset: 1698765432
 ## Usage Examples
 
 ### Public Access (No Authentication)
+
+#### Get All Roles
+```bash
+curl -X GET http://localhost:85/api/meta/roles \
+  -H "Accept: application/json"
+```
 
 #### List Posts
 ```bash
@@ -242,6 +256,7 @@ if (results.error) {
 ### Public Access (No Authentication Required)
 
 ✅ **Allowed**:
+- List all roles (`GET /api/meta/roles`)
 - List all posts (`GET /api/posts`)
 - Search posts (`GET /api/posts/search`)
 - View single post (`GET /api/posts/{id}`)
