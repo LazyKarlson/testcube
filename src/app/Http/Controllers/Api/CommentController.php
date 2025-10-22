@@ -5,14 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
 use App\Models\Post;
-use App\Services\CommentService;
 use App\Transformers\CommentTransformer;
 use Illuminate\Http\Request;
 
 class CommentController extends Controller
 {
     public function __construct(
-        private CommentService $commentService,
         private CommentTransformer $transformer
     ) {}
 
@@ -21,7 +19,10 @@ class CommentController extends Controller
      */
     public function index(Post $post)
     {
-        $comments = $this->commentService->getByPost($post->id, 20);
+        $comments = Comment::with('author:id,name,email')
+            ->where('post_id', $post->id)
+            ->latest()
+            ->paginate(20);
 
         // Transform the data
         $comments->setCollection(
@@ -42,7 +43,11 @@ class CommentController extends Controller
             'body' => 'required|string',
         ]);
 
-        $comment = $this->commentService->create($request->user(), $post->id, $validated);
+        $comment = Comment::create([
+            'author_id' => $request->user()->id,
+            'post_id' => $post->id,
+            'body' => $validated['body'],
+        ]);
 
         return response()->json([
             'message' => 'Comment created successfully',
@@ -73,7 +78,7 @@ class CommentController extends Controller
             'body' => 'required|string',
         ]);
 
-        $comment = $this->commentService->update($comment, $validated);
+        $comment->update($validated);
 
         return response()->json([
             'message' => 'Comment updated successfully',
@@ -88,7 +93,7 @@ class CommentController extends Controller
     {
         $this->authorize('delete', $comment);
 
-        $this->commentService->delete($comment);
+        $comment->delete();
 
         return response()->json([
             'message' => 'Comment deleted successfully',

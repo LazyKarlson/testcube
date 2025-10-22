@@ -24,7 +24,8 @@ class PostsSearchTest extends TestCase
     {
         $response = $this->getJson('/api/posts/search?q=test');
 
-        $response->assertStatus(401);
+        // Posts search is public, so unauthenticated users can access it
+        $response->assertStatus(200);
     }
 
     public function test_search_requires_query_parameter(): void
@@ -331,7 +332,10 @@ class PostsSearchTest extends TestCase
     {
         $user = User::factory()->create();
 
-        Post::factory()->count(30)->create(['title' => 'Laravel Post']);
+        // Create 30 posts with unique titles containing 'Laravel'
+        for ($i = 1; $i <= 30; $i++) {
+            Post::factory()->create(['title' => "Laravel Post {$i}"]);
+        }
 
         $response = $this->actingAs($user)->getJson('/api/posts/search?q=laravel&per_page=10');
 

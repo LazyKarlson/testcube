@@ -2,19 +2,16 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Contracts\CacheServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
-use App\Services\PostService;
 use App\Transformers\PostTransformer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class PostController extends Controller
 {
     public function __construct(
-        private PostService $postService,
-        private PostTransformer $transformer,
-        private CacheServiceInterface $cache
+        private PostTransformer $transformer
     ) {}
 
     /**
@@ -45,8 +42,14 @@ class PostController extends Controller
         $cacheKey = "api:posts:page:{$page}:sort:{$sortBy}:{$sortOrder}:per_page:{$perPage}";
 
         // Cache for 5 minutes (300 seconds)
-        return $this->cache->remember($cacheKey, 300, function () use ($sortBy, $sortOrder, $perPage) {
-            $posts = $this->postService->getPaginated($perPage, $sortBy, $sortOrder);
+        return Cache::remember($cacheKey, 300, function () use ($sortBy, $sortOrder, $perPage) {
+            $posts = Post::with([
+                'author:id,name,email',
+                'comments' => fn ($q) => $q->latest()->latest('id')->limit(1)->with('author:id,name'),
+            ])
+                ->withCount('comments')
+                ->orderBy($sortBy, $sortOrder)
+                ->paginate($perPage);
 
             // Transform the data
             $posts->setCollection(
@@ -71,7 +74,7 @@ class PostController extends Controller
             'published_at' => 'sometimes|nullable|date',
         ]);
 
-        $post = $this->postService->create($request->user(), $validated);
+        $post = Post::createWithDefaults($request->user(), $validated);
 
         return response()->json([
             'message' => 'Post created successfully',
@@ -89,7 +92,7 @@ class PostController extends Controller
         $cacheKey = "api:post:{$post->id}";
 
         // Cache for 10 minutes (600 seconds)
-        return $this->cache->remember($cacheKey, 600, function () use ($post) {
+        return Cache::remember($cacheKey, 600, function () use ($post) {
             $post->load(['author:id,name,email', 'comments.author:id,name,email']);
 
             return response()->json([
@@ -112,7 +115,7 @@ class PostController extends Controller
             'published_at' => 'sometimes|nullable|date',
         ]);
 
-        $post = $this->postService->update($post, $validated);
+        $post->updateWithDefaults($validated);
 
         return response()->json([
             'message' => 'Post updated successfully',
@@ -127,7 +130,7 @@ class PostController extends Controller
     {
         $this->authorize('delete', $post);
 
-        $this->postService->delete($post);
+        $post->delete();
 
         return response()->json([
             'message' => 'Post deleted successfully',
@@ -139,7 +142,13 @@ class PostController extends Controller
      */
     public function myPosts(Request $request)
     {
-        $posts = $this->postService->getByAuthor($request->user()->id, 15);
+        $posts = Post::with([
+            'author:id,name,email',
+            'comments' => fn ($q) => $q->latest()->limit(1)->with('author:id,name'),
+        ])
+            ->withCount('comments')
+            ->where('author_id', $request->user()->id)
+            ->paginate(15);
 
         // Transform the data
         $posts->setCollection(
@@ -185,8 +194,39 @@ class PostController extends Controller
             'per_page' => $validated['per_page'] ?? 25,
         ];
 
-        // Search using service
-        $posts = $this->postService->search($criteria);
+        // Build search query
+        $query = Post::query();
+
+        // Search query
+        $query->where(function ($q) use ($criteria) {
+            $q->whereRaw('LOWER(title) LIKE ?', ['%'.strtolower($criteria['q']).'%'])
+                ->orWhereRaw('LOWER(body) LIKE ?', ['%'.strtolower($criteria['q']).'%']);
+        });
+
+        // Status filter
+        if ($criteria['status']) {
+            $query->where('status', $criteria['status']);
+        }
+
+        // Date range filter
+        if ($criteria['published_from']) {
+            $query->whereDate('published_at', '>=', $criteria['published_from']);
+        }
+        if ($criteria['published_to']) {
+            $query->whereDate('published_at', '<=', $criteria['published_to']);
+        }
+
+        // Eager load relationships
+        $query->with([
+            'author:id,name,email',
+            'comments' => fn ($q) => $q->latest()->latest('id')->limit(1)->with('author:id,name'),
+        ])->withCount('comments');
+
+        // Sorting
+        $query->orderBy($criteria['sort_by'], $criteria['sort_order']);
+
+        // Paginate
+        $posts = $query->paginate($criteria['per_page']);
 
         // Transform the data
         $posts->setCollection(

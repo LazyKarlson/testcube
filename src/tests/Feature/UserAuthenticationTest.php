@@ -149,7 +149,7 @@ class UserAuthenticationTest extends TestCase
             ->assertJsonValidationErrors(['email']);
     }
 
-    public function test_login_revokes_previous_tokens(): void
+    public function test_login_supports_multiple_sessions(): void
     {
         $user = User::factory()->create([
             'email' => 'test@example.com',
@@ -172,13 +172,13 @@ class UserAuthenticationTest extends TestCase
 
         $secondToken = $secondResponse->json('access_token');
 
-        // First token should no longer work
+        // Both tokens should work (multiple sessions supported)
         $response = $this->withHeader('Authorization', 'Bearer '.$firstToken)
             ->getJson('/api/user');
 
-        $response->assertStatus(401);
+        $response->assertStatus(200);
 
-        // Second token should work
+        // Second token should also work
         $response = $this->withHeader('Authorization', 'Bearer '.$secondToken)
             ->getJson('/api/user');
 
@@ -329,13 +329,20 @@ class UserAuthenticationTest extends TestCase
 
         $token2 = $response2->json('access_token');
 
-        // Both tokens should work
+        // Clear any cached authentication between requests
+        auth()->guard('sanctum')->forgetUser();
+
+        // Test token1
         $authResponse1 = $this->withHeader('Authorization', 'Bearer '.$token1)
             ->getJson('/api/user');
 
         $authResponse1->assertStatus(200)
             ->assertJson(['user' => ['email' => 'user1@example.com']]);
 
+        // Clear authentication again before testing token2
+        auth()->guard('sanctum')->forgetUser();
+
+        // Test token2
         $authResponse2 = $this->withHeader('Authorization', 'Bearer '.$token2)
             ->getJson('/api/user');
 

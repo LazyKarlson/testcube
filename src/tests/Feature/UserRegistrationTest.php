@@ -227,7 +227,8 @@ class UserRegistrationTest extends TestCase
 
     public function test_registration_limits_email_to_255_characters(): void
     {
-        $longEmail = str_repeat('a', 240).'@example.com';
+        // Create an email longer than 255 characters (244 + @ + example.com = 256)
+        $longEmail = str_repeat('a', 244).'@example.com';
 
         $response = $this->postJson('/api/register', [
             'name' => 'Test User',

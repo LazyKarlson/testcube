@@ -36,7 +36,7 @@ class PublicAccessTest extends TestCase
 
     public function test_unauthenticated_user_can_view_single_post(): void
     {
-        $post = Post::factory()->create(['title' => 'Public Post']);
+        $post = Post::factory()->published()->create(['title' => 'Public Post']);
 
         $response = $this->getJson("/api/posts/{$post->id}");
 
@@ -213,7 +213,7 @@ class PublicAccessTest extends TestCase
 
     public function test_rate_limit_is_enforced_on_single_post(): void
     {
-        $post = Post::factory()->create();
+        $post = Post::factory()->published()->create();
 
         // Make 61 requests
         for ($i = 0; $i < 61; $i++) {

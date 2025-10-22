@@ -21,13 +21,24 @@ class AuthController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => 'required|string|email|max:255',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
+        // Check for case-insensitive email uniqueness
+        $existingUser = User::whereRaw('LOWER(email) = ?', [strtolower($validated['email'])])->first();
+        if ($existingUser) {
+            return response()->json([
+                'message' => 'The email has already been taken.',
+                'errors' => [
+                    'email' => ['The email has already been taken.'],
+                ],
+            ], 422);
+        }
+
         $user = User::create([
             'name' => $validated['name'],
-            'email' => $validated['email'],
+            'email' => strtolower($validated['email']),
             'password' => Hash::make($validated['password']),
         ]);
 
@@ -66,7 +77,13 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
+        // Find user by email (case-sensitive for now to debug)
         $user = User::where('email', $validated['email'])->first();
+
+        // If not found, try case-insensitive
+        if (! $user) {
+            $user = User::whereRaw('LOWER(email) = LOWER(?)', [$validated['email']])->first();
+        }
 
         if (! $user || ! Hash::check($validated['password'], $user->password)) {
             throw ValidationException::withMessages([
@@ -74,9 +91,8 @@ class AuthController extends Controller
             ]);
         }
 
-        // Revoke all previous tokens (optional - remove if you want multiple sessions)
-        $user->tokens()->delete();
-
+        // Create new token (keeping previous tokens for multiple sessions)
+        // If you want single session only, uncomment: $user->tokens()->delete();
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -99,8 +115,12 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        // Revoke current token
-        $request->user()->currentAccessToken()->delete();
+        // Revoke all tokens for the user
+        $user = $request->user();
+        $user->tokens()->delete();
+
+        // Clear any cached authentication
+        auth()->guard('sanctum')->forgetUser();
 
         return response()->json([
             'message' => 'Logged out successfully',

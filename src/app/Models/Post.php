@@ -78,4 +78,44 @@ class Post extends Model
             'published_at' => null,
         ]);
     }
+
+    /**
+     * Create a post with business rules applied.
+     */
+    public static function createWithDefaults(User $author, array $data): self
+    {
+        // Auto-set published_at if status is published
+        if (($data['status'] ?? 'draft') === 'published' && ! isset($data['published_at'])) {
+            $data['published_at'] = now();
+        }
+
+        // Clear published_at when draft
+        if (($data['status'] ?? 'draft') === 'draft') {
+            $data['published_at'] = null;
+        }
+
+        // Default status to draft
+        $data['status'] = $data['status'] ?? 'draft';
+        $data['author_id'] = $author->id;
+
+        return self::create($data);
+    }
+
+    /**
+     * Update post with business rules applied.
+     */
+    public function updateWithDefaults(array $data): bool
+    {
+        // Auto-set published_at when changing to published
+        if (isset($data['status']) && $data['status'] === 'published' && ! $this->isPublished()) {
+            $data['published_at'] = $data['published_at'] ?? now();
+        }
+
+        // Clear published_at when changing to draft
+        if (isset($data['status']) && $data['status'] === 'draft') {
+            $data['published_at'] = null;
+        }
+
+        return $this->update($data);
+    }
 }

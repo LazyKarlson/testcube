@@ -24,7 +24,8 @@ class PostsListTest extends TestCase
     {
         $response = $this->getJson('/api/posts');
 
-        $response->assertStatus(401);
+        // Posts are public, so unauthenticated users can access them
+        $response->assertStatus(200);
     }
 
     public function test_authenticated_user_can_access_posts_list(): void

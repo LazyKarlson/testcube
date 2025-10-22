@@ -58,7 +58,6 @@ class PostTransformer
     private function transformAuthor($author): array
     {
         return [
-            'id' => $author->id,
             'name' => $author->name,
             'email' => $author->email,
         ];

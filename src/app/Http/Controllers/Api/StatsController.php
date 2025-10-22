@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Contracts\CacheServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Services\StatisticsService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class StatsController extends Controller
 {
     public function __construct(
-        private StatisticsService $statsService,
-        private CacheServiceInterface $cache
+        private StatisticsService $statsService
     ) {}
 
     /**
@@ -37,7 +36,7 @@ class StatsController extends Controller
         }
 
         // Cache for 15 minutes (900 seconds)
-        return $this->cache->remember($cacheKey, 900, function () use ($dateFrom, $dateTo) {
+        return Cache::remember($cacheKey, 900, function () use ($dateFrom, $dateTo) {
             $stats = $this->statsService->getPostStatistics($dateFrom, $dateTo);
 
             return response()->json($stats);
@@ -67,7 +66,7 @@ class StatsController extends Controller
         }
 
         // Cache for 15 minutes (900 seconds)
-        return $this->cache->remember($cacheKey, 900, function () use ($dateFrom, $dateTo) {
+        return Cache::remember($cacheKey, 900, function () use ($dateFrom, $dateTo) {
             $stats = $this->statsService->getCommentStatistics($dateFrom, $dateTo);
 
             return response()->json($stats);
@@ -97,7 +96,7 @@ class StatsController extends Controller
         }
 
         // Cache for 15 minutes (900 seconds)
-        return $this->cache->remember($cacheKey, 900, function () use ($dateFrom, $dateTo) {
+        return Cache::remember($cacheKey, 900, function () use ($dateFrom, $dateTo) {
             $stats = $this->statsService->getUserStatistics($dateFrom, $dateTo);
 
             return response()->json($stats);

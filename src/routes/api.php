@@ -48,6 +48,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ->name('verification.send');
     Route::get('/email/verify/check', [AuthController::class, 'checkEmailVerification'])
         ->name('verification.check');
+    Route::get('/email/verification-status', [AuthController::class, 'checkEmailVerification']);
 
     // Roles - available to all authenticated users
     Route::get('/roles', [RoleController::class, 'index']);
