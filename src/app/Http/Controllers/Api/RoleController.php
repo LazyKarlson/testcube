@@ -111,7 +111,7 @@ class RoleController extends Controller
     public function getUserRoles(User $user)
     {
         $user->load('roles.permissions');
-        
+
         return response()->json([
             'user' => [
                 'id' => $user->id,
@@ -128,4 +128,3 @@ class RoleController extends Controller
         ]);
     }
 }
-

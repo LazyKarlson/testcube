@@ -15,7 +15,6 @@ class StatsController extends Controller
     /**
      * Get post statistics.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function posts(Request $request)
@@ -32,7 +31,7 @@ class StatsController extends Controller
         // Create cache key based on parameters
         $cacheKey = 'api:stats:posts';
         if ($dateFrom || $dateTo) {
-            $cacheKey .= ':' . ($dateFrom ?? 'null') . ':' . ($dateTo ?? 'null');
+            $cacheKey .= ':'.($dateFrom ?? 'null').':'.($dateTo ?? 'null');
         }
 
         // Cache for 15 minutes (900 seconds)
@@ -44,8 +43,8 @@ class StatsController extends Controller
     /**
      * Get post statistics data.
      *
-     * @param string|null $dateFrom
-     * @param string|null $dateTo
+     * @param  string|null  $dateFrom
+     * @param  string|null  $dateTo
      * @return \Illuminate\Http\JsonResponse
      */
     private function getPostStats($dateFrom, $dateTo)
@@ -68,15 +67,15 @@ class StatsController extends Controller
         $postsByDateRange = null;
         if ($dateFrom || $dateTo) {
             $query = Post::query();
-            
+
             if ($dateFrom) {
                 $query->where('created_at', '>=', $dateFrom);
             }
-            
+
             if ($dateTo) {
-                $query->where('created_at', '<=', $dateTo . ' 23:59:59');
+                $query->where('created_at', '<=', $dateTo.' 23:59:59');
             }
-            
+
             $postsByDateRange = [
                 'date_from' => $dateFrom,
                 'date_to' => $dateTo,
@@ -128,7 +127,6 @@ class StatsController extends Controller
     /**
      * Get comment statistics.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function comments(Request $request)
@@ -145,7 +143,7 @@ class StatsController extends Controller
         // Create cache key based on parameters
         $cacheKey = 'api:stats:comments';
         if ($dateFrom || $dateTo) {
-            $cacheKey .= ':' . ($dateFrom ?? 'null') . ':' . ($dateTo ?? 'null');
+            $cacheKey .= ':'.($dateFrom ?? 'null').':'.($dateTo ?? 'null');
         }
 
         // Cache for 15 minutes (900 seconds)
@@ -157,8 +155,8 @@ class StatsController extends Controller
     /**
      * Get comment statistics data.
      *
-     * @param string|null $dateFrom
-     * @param string|null $dateTo
+     * @param  string|null  $dateFrom
+     * @param  string|null  $dateTo
      * @return \Illuminate\Http\JsonResponse
      */
     private function getCommentStats($dateFrom, $dateTo)
@@ -171,15 +169,15 @@ class StatsController extends Controller
         $commentsByDateRange = null;
         if ($dateFrom || $dateTo) {
             $query = Comment::query();
-            
+
             if ($dateFrom) {
                 $query->where('created_at', '>=', $dateFrom);
             }
-            
+
             if ($dateTo) {
-                $query->where('created_at', '<=', $dateTo . ' 23:59:59');
+                $query->where('created_at', '<=', $dateTo.' 23:59:59');
             }
-            
+
             $commentsByDateRange = [
                 'date_from' => $dateFrom,
                 'date_to' => $dateTo,
@@ -189,9 +187,9 @@ class StatsController extends Controller
 
         // 3. Comments activity by hour (0-23)
         $commentsByHour = Comment::select(
-                DB::raw('EXTRACT(HOUR FROM created_at) as hour'),
-                DB::raw('count(*) as count')
-            )
+            DB::raw('EXTRACT(HOUR FROM created_at) as hour'),
+            DB::raw('count(*) as count')
+        )
             ->groupBy('hour')
             ->orderBy('hour')
             ->get()
@@ -206,9 +204,9 @@ class StatsController extends Controller
 
         // 4. Comments activity by weekday (0=Sunday, 6=Saturday)
         $commentsByWeekday = Comment::select(
-                DB::raw('EXTRACT(DOW FROM created_at) as weekday'),
-                DB::raw('count(*) as count')
-            )
+            DB::raw('EXTRACT(DOW FROM created_at) as weekday'),
+            DB::raw('count(*) as count')
+        )
             ->groupBy('weekday')
             ->orderBy('weekday')
             ->get()
@@ -228,9 +226,9 @@ class StatsController extends Controller
 
         // 5. Comments activity by date (last 30 days)
         $commentsByDate = Comment::select(
-                DB::raw('DATE(created_at) as date'),
-                DB::raw('count(*) as count')
-            )
+            DB::raw('DATE(created_at) as date'),
+            DB::raw('count(*) as count')
+        )
             ->where('created_at', '>=', now()->subDays(30))
             ->groupBy('date')
             ->orderBy('date')
@@ -254,7 +252,6 @@ class StatsController extends Controller
     /**
      * Get user statistics.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function users(Request $request)
@@ -347,4 +344,3 @@ class StatsController extends Controller
         ]);
     }
 }
-

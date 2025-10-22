@@ -15,7 +15,7 @@ class UserController extends Controller
     public function index()
     {
         $users = User::with('roles')->latest()->paginate(15);
-        
+
         return response()->json($users);
     }
 
@@ -25,7 +25,7 @@ class UserController extends Controller
     public function show(User $user)
     {
         $user->load('roles.permissions');
-        
+
         return response()->json([
             'user' => [
                 'id' => $user->id,
@@ -47,7 +47,7 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
+            'email' => 'sometimes|required|email|unique:users,email,'.$user->id,
             'password' => 'sometimes|required|string|min:8',
         ]);
 
@@ -82,4 +82,3 @@ class UserController extends Controller
         ]);
     }
 }
-

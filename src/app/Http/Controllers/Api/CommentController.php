@@ -55,7 +55,7 @@ class CommentController extends Controller
     public function update(Request $request, Comment $comment)
     {
         // Check if user owns the comment or is admin
-        if ($comment->author_id !== $request->user()->id && !$request->user()->isAdmin()) {
+        if ($comment->author_id !== $request->user()->id && ! $request->user()->isAdmin()) {
             return response()->json([
                 'message' => 'Forbidden. You can only update your own comments.',
             ], 403);
@@ -79,7 +79,7 @@ class CommentController extends Controller
     public function destroy(Request $request, Comment $comment)
     {
         // Check if user owns the comment or is admin
-        if ($comment->author_id !== $request->user()->id && !$request->user()->isAdmin()) {
+        if ($comment->author_id !== $request->user()->id && ! $request->user()->isAdmin()) {
             return response()->json([
                 'message' => 'Forbidden. You can only delete your own comments.',
             ], 403);
@@ -92,4 +92,3 @@ class CommentController extends Controller
         ]);
     }
 }
-

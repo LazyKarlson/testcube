@@ -48,4 +48,3 @@ class CommentObserver
         // For production with Redis, use: Cache::tags(['comments'])->flush();
     }
 }
-

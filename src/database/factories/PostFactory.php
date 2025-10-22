@@ -26,7 +26,7 @@ class PostFactory extends Factory
     public function definition(): array
     {
         $status = fake()->randomElement(['draft', 'published']);
-        
+
         return [
             'author_id' => User::factory(),
             'title' => fake()->unique()->sentence(6, true),
@@ -79,4 +79,3 @@ class PostFactory extends Factory
         ]);
     }
 }
-

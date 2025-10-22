@@ -41,4 +41,3 @@ class RegisterController extends Controller
         return redirect()->route('dashboard')->with('success', 'Registration successful! Welcome to the application.');
     }
 }
-

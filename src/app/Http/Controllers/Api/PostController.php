@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Gate;
 
 class PostController extends Controller
 {
@@ -44,11 +43,11 @@ class PostController extends Controller
                 'author:id,name,email',
                 'comments' => function ($query) {
                     $query->latest()->limit(1)->with('author:id,name');
-                }
+                },
             ])
-            ->withCount('comments')
-            ->orderBy($sortBy, $sortOrder)
-            ->paginate($perPage);
+                ->withCount('comments')
+                ->orderBy($sortBy, $sortOrder)
+                ->paginate($perPage);
 
             // Transform the data to include required fields
             $posts->getCollection()->transform(function ($post) {
@@ -90,12 +89,12 @@ class PostController extends Controller
         ]);
 
         // Auto-set published_at if status is published and published_at is not provided
-        if (isset($validated['status']) && $validated['status'] === 'published' && !isset($validated['published_at'])) {
+        if (isset($validated['status']) && $validated['status'] === 'published' && ! isset($validated['published_at'])) {
             $validated['published_at'] = now();
         }
 
         // Default status to draft if not provided
-        if (!isset($validated['status'])) {
+        if (! isset($validated['status'])) {
             $validated['status'] = 'draft';
         }
 
@@ -130,22 +129,22 @@ class PostController extends Controller
     public function update(Request $request, Post $post)
     {
         // Check if user owns the post or is admin
-        if ($post->author_id !== $request->user()->id && !$request->user()->isAdmin()) {
+        if ($post->author_id !== $request->user()->id && ! $request->user()->isAdmin()) {
             return response()->json([
                 'message' => 'Forbidden. You can only update your own posts.',
             ], 403);
         }
 
         $validated = $request->validate([
-            'title' => 'sometimes|required|string|max:255|unique:posts,title,' . $post->id,
+            'title' => 'sometimes|required|string|max:255|unique:posts,title,'.$post->id,
             'body' => 'sometimes|required|string',
             'status' => 'sometimes|in:draft,published',
             'published_at' => 'sometimes|nullable|date',
         ]);
 
         // Auto-set published_at when changing status to published
-        if (isset($validated['status']) && $validated['status'] === 'published' && !$post->isPublished()) {
-            if (!isset($validated['published_at'])) {
+        if (isset($validated['status']) && $validated['status'] === 'published' && ! $post->isPublished()) {
+            if (! isset($validated['published_at'])) {
                 $validated['published_at'] = now();
             }
         }
@@ -171,7 +170,7 @@ class PostController extends Controller
     public function destroy(Request $request, Post $post)
     {
         // Check if user owns the post or is admin
-        if ($post->author_id !== $request->user()->id && !$request->user()->isAdmin()) {
+        if ($post->author_id !== $request->user()->id && ! $request->user()->isAdmin()) {
             return response()->json([
                 'message' => 'Forbidden. You can only delete your own posts.',
             ], 403);
@@ -235,8 +234,8 @@ class PostController extends Controller
 
         // Case-insensitive search in title and body
         $query->where(function ($q) use ($searchQuery) {
-            $q->whereRaw('LOWER(title) LIKE ?', ['%' . strtolower($searchQuery) . '%'])
-              ->orWhereRaw('LOWER(body) LIKE ?', ['%' . strtolower($searchQuery) . '%']);
+            $q->whereRaw('LOWER(title) LIKE ?', ['%'.strtolower($searchQuery).'%'])
+                ->orWhereRaw('LOWER(body) LIKE ?', ['%'.strtolower($searchQuery).'%']);
         });
 
         // Filter by status
@@ -257,11 +256,11 @@ class PostController extends Controller
             'author:id,name,email',
             'comments' => function ($query) {
                 $query->latest()->limit(1)->with('author:id,name');
-            }
+            },
         ])
-        ->withCount('comments')
-        ->orderBy($sortBy, $sortOrder)
-        ->paginate($perPage);
+            ->withCount('comments')
+            ->orderBy($sortBy, $sortOrder)
+            ->paginate($perPage);
 
         // Transform the data to include required fields
         $posts->getCollection()->transform(function ($post) {
@@ -296,6 +295,4 @@ class PostController extends Controller
             'results' => $posts,
         ]);
     }
-
 }
-

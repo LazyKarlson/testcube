@@ -22,7 +22,7 @@ class PostObserver
     {
         // Clear specific post cache
         Cache::forget("api:post:{$post->id}");
-        
+
         // Clear lists and stats
         $this->clearPostsCaches();
     }
@@ -34,7 +34,7 @@ class PostObserver
     {
         // Clear specific post cache
         Cache::forget("api:post:{$post->id}");
-        
+
         // Clear lists and stats
         $this->clearPostsCaches();
     }
@@ -58,4 +58,3 @@ class PostObserver
         // Cache::tags(['posts'])->flush();
     }
 }
-

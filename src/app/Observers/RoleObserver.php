@@ -44,4 +44,3 @@ class RoleObserver
         // - User stats are cleared in RoleController when assigning/removing roles
     }
 }
-

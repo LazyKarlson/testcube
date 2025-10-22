@@ -15,7 +15,7 @@ class PublicAccessTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Run seeders to set up roles and permissions
         $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
     }
@@ -185,7 +185,7 @@ class PublicAccessTest extends TestCase
         // Make 61 requests (rate limit is 60 per minute)
         for ($i = 0; $i < 61; $i++) {
             $response = $this->getJson('/api/posts');
-            
+
             if ($i < 60) {
                 $response->assertStatus(200);
             } else {
@@ -202,7 +202,7 @@ class PublicAccessTest extends TestCase
         // Make 61 requests
         for ($i = 0; $i < 61; $i++) {
             $response = $this->getJson('/api/posts/search?q=test');
-            
+
             if ($i < 60) {
                 $response->assertStatus(200);
             } else {
@@ -218,7 +218,7 @@ class PublicAccessTest extends TestCase
         // Make 61 requests
         for ($i = 0; $i < 61; $i++) {
             $response = $this->getJson("/api/posts/{$post->id}");
-            
+
             if ($i < 60) {
                 $response->assertStatus(200);
             } else {
@@ -235,7 +235,7 @@ class PublicAccessTest extends TestCase
         // Make 61 requests
         for ($i = 0; $i < 61; $i++) {
             $response = $this->getJson("/api/posts/{$post->id}/comments");
-            
+
             if ($i < 60) {
                 $response->assertStatus(200);
             } else {
@@ -251,7 +251,7 @@ class PublicAccessTest extends TestCase
         // Make 61 requests
         for ($i = 0; $i < 61; $i++) {
             $response = $this->getJson("/api/comments/{$comment->id}");
-            
+
             if ($i < 60) {
                 $response->assertStatus(200);
             } else {
@@ -286,7 +286,7 @@ class PublicAccessTest extends TestCase
                 'author' => [
                     'name' => 'John Doe',
                     'email' => 'john@example.com',
-                ]
+                ],
             ]);
     }
 
@@ -309,10 +309,10 @@ class PublicAccessTest extends TestCase
     {
         Post::factory()->published()->create([
             'title' => 'Laravel Tutorial',
-            'published_at' => '2025-10-15'
+            'published_at' => '2025-10-15',
         ]);
         Post::factory()->draft()->create([
-            'title' => 'Laravel Guide'
+            'title' => 'Laravel Guide',
         ]);
 
         $response = $this->getJson('/api/posts/search?q=laravel&status=published&published_at[from]=2025-10-01');
@@ -333,4 +333,3 @@ class PublicAccessTest extends TestCase
         $this->assertEquals(10, $response->json('per_page'));
     }
 }
-

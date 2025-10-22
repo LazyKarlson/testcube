@@ -55,4 +55,3 @@ class UsersSeeder extends Seeder
         $this->command->info('All passwords: password');
     }
 }
-

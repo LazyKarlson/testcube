@@ -15,7 +15,7 @@ class PostsListTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Run seeders to set up roles and permissions
         $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
     }
@@ -46,7 +46,7 @@ class PostsListTest extends TestCase
     {
         $user = User::factory()->create();
         $author = User::factory()->create();
-        
+
         $post = Post::factory()->forAuthor($author)->published()->create();
         Comment::factory()->forPost($post)->forAuthor($user)->create();
 
@@ -65,8 +65,8 @@ class PostsListTest extends TestCase
                         'author' => ['name', 'email'],
                         'comments_count',
                         'last_comment',
-                    ]
-                ]
+                    ],
+                ],
             ]);
     }
 
@@ -74,7 +74,7 @@ class PostsListTest extends TestCase
     {
         $user = User::factory()->create();
         $author = User::factory()->create(['name' => 'John Doe', 'email' => 'john@example.com']);
-        
+
         Post::factory()->forAuthor($author)->create(['title' => 'Test Post']);
 
         $response = $this->actingAs($user)->getJson('/api/posts');
@@ -84,7 +84,7 @@ class PostsListTest extends TestCase
                 'author' => [
                     'name' => 'John Doe',
                     'email' => 'john@example.com',
-                ]
+                ],
             ]);
     }
 
@@ -92,13 +92,13 @@ class PostsListTest extends TestCase
     {
         $user = User::factory()->create();
         $post = Post::factory()->create();
-        
+
         Comment::factory()->count(5)->forPost($post)->create();
 
         $response = $this->actingAs($user)->getJson('/api/posts');
 
         $response->assertStatus(200);
-        
+
         $postData = collect($response->json('data'))->firstWhere('id', $post->id);
         $this->assertEquals(5, $postData['comments_count']);
     }
@@ -108,14 +108,14 @@ class PostsListTest extends TestCase
         $user = User::factory()->create();
         $commentAuthor = User::factory()->create(['name' => 'Jane Smith']);
         $post = Post::factory()->create();
-        
+
         Comment::factory()->forPost($post)->create(['body' => 'First comment']);
         Comment::factory()->forPost($post)->forAuthor($commentAuthor)->create(['body' => 'Last comment']);
 
         $response = $this->actingAs($user)->getJson('/api/posts');
 
         $response->assertStatus(200);
-        
+
         $postData = collect($response->json('data'))->firstWhere('id', $post->id);
         $this->assertEquals('Last comment', $postData['last_comment']['body']);
         $this->assertEquals('Jane Smith', $postData['last_comment']['author_name']);
@@ -129,7 +129,7 @@ class PostsListTest extends TestCase
         $response = $this->actingAs($user)->getJson('/api/posts');
 
         $response->assertStatus(200);
-        
+
         $postData = collect($response->json('data'))->firstWhere('id', $post->id);
         $this->assertNull($postData['last_comment']);
     }
@@ -171,7 +171,7 @@ class PostsListTest extends TestCase
     public function test_posts_list_default_sort_by_published_at_desc(): void
     {
         $user = User::factory()->create();
-        
+
         $post1 = Post::factory()->create(['published_at' => now()->subDays(3)]);
         $post2 = Post::factory()->create(['published_at' => now()->subDays(1)]);
         $post3 = Post::factory()->create(['published_at' => now()->subDays(2)]);
@@ -179,7 +179,7 @@ class PostsListTest extends TestCase
         $response = $this->actingAs($user)->getJson('/api/posts');
 
         $response->assertStatus(200);
-        
+
         $ids = collect($response->json('data'))->pluck('id')->toArray();
         $this->assertEquals($post2->id, $ids[0]); // Most recent first
     }
@@ -187,7 +187,7 @@ class PostsListTest extends TestCase
     public function test_posts_list_can_sort_by_title_asc(): void
     {
         $user = User::factory()->create();
-        
+
         Post::factory()->create(['title' => 'Zebra Post']);
         Post::factory()->create(['title' => 'Apple Post']);
         Post::factory()->create(['title' => 'Mango Post']);
@@ -195,7 +195,7 @@ class PostsListTest extends TestCase
         $response = $this->actingAs($user)->getJson('/api/posts?sort_by=title&sort_order=asc');
 
         $response->assertStatus(200);
-        
+
         $titles = collect($response->json('data'))->pluck('title')->toArray();
         $this->assertEquals('Apple Post', $titles[0]);
         $this->assertEquals('Mango Post', $titles[1]);
@@ -205,7 +205,7 @@ class PostsListTest extends TestCase
     public function test_posts_list_can_sort_by_title_desc(): void
     {
         $user = User::factory()->create();
-        
+
         Post::factory()->create(['title' => 'Zebra Post']);
         Post::factory()->create(['title' => 'Apple Post']);
         Post::factory()->create(['title' => 'Mango Post']);
@@ -213,7 +213,7 @@ class PostsListTest extends TestCase
         $response = $this->actingAs($user)->getJson('/api/posts?sort_by=title&sort_order=desc');
 
         $response->assertStatus(200);
-        
+
         $titles = collect($response->json('data'))->pluck('title')->toArray();
         $this->assertEquals('Zebra Post', $titles[0]);
         $this->assertEquals('Mango Post', $titles[1]);
@@ -223,7 +223,7 @@ class PostsListTest extends TestCase
     public function test_posts_list_can_sort_by_created_at(): void
     {
         $user = User::factory()->create();
-        
+
         $post1 = Post::factory()->create(['created_at' => now()->subDays(3)]);
         $post2 = Post::factory()->create(['created_at' => now()->subDays(1)]);
         $post3 = Post::factory()->create(['created_at' => now()->subDays(2)]);
@@ -231,7 +231,7 @@ class PostsListTest extends TestCase
         $response = $this->actingAs($user)->getJson('/api/posts?sort_by=created_at&sort_order=desc');
 
         $response->assertStatus(200);
-        
+
         $ids = collect($response->json('data'))->pluck('id')->toArray();
         $this->assertEquals($post2->id, $ids[0]); // Most recent first
     }
@@ -271,7 +271,7 @@ class PostsListTest extends TestCase
         $this->assertEquals(2, $page2->json('current_page'));
         $this->assertEquals(30, $page1->json('total'));
         $this->assertEquals(30, $page2->json('total'));
-        
+
         // Ensure different posts on different pages
         $page1Ids = collect($page1->json('data'))->pluck('id')->toArray();
         $page2Ids = collect($page2->json('data'))->pluck('id')->toArray();
@@ -281,14 +281,14 @@ class PostsListTest extends TestCase
     public function test_posts_list_includes_both_published_and_draft_posts(): void
     {
         $user = User::factory()->create();
-        
+
         Post::factory()->published()->create(['title' => 'Published Post']);
         Post::factory()->draft()->create(['title' => 'Draft Post']);
 
         $response = $this->actingAs($user)->getJson('/api/posts');
 
         $response->assertStatus(200);
-        
+
         $titles = collect($response->json('data'))->pluck('title')->toArray();
         $this->assertContains('Published Post', $titles);
         $this->assertContains('Draft Post', $titles);
@@ -297,16 +297,15 @@ class PostsListTest extends TestCase
     public function test_posts_list_shows_null_published_at_for_drafts(): void
     {
         $user = User::factory()->create();
-        
+
         $draft = Post::factory()->draft()->create();
 
         $response = $this->actingAs($user)->getJson('/api/posts');
 
         $response->assertStatus(200);
-        
+
         $draftData = collect($response->json('data'))->firstWhere('id', $draft->id);
         $this->assertEquals('draft', $draftData['status']);
         $this->assertNull($draftData['published_at']);
     }
 }
-

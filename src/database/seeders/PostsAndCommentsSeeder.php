@@ -102,11 +102,13 @@ class PostsAndCommentsSeeder extends Seeder
 
         if ($authors->isEmpty()) {
             $this->command->error('No author users found! Please run UsersSeeder first.');
+
             return;
         }
 
         if ($commenters->isEmpty()) {
             $this->command->error('No users found for commenting! Please run UsersSeeder first.');
+
             return;
         }
 
@@ -146,21 +148,21 @@ class PostsAndCommentsSeeder extends Seeder
                 $attempts = 0;
                 do {
                     $prefix = $titleVariations[array_rand($titleVariations)];
-                    $suffix = $attempts > 0 ? ' - Part ' . ($attempts + 1) : '';
-                    $title = $prefix . $theme['title'] . $suffix;
+                    $suffix = $attempts > 0 ? ' - Part '.($attempts + 1) : '';
+                    $title = $prefix.$theme['title'].$suffix;
                     $attempts++;
                 } while (in_array($title, $usedTitles) && $attempts < 20);
 
                 // If still not unique after 20 attempts, add timestamp
                 if (in_array($title, $usedTitles)) {
-                    $title .= ' (' . now()->timestamp . mt_rand(1000, 9999) . ')';
+                    $title .= ' ('.now()->timestamp.mt_rand(1000, 9999).')';
                 }
 
                 $usedTitles[] = $title;
 
                 // Randomly decide if published or draft (80% published)
                 $isPublished = rand(1, 100) <= 80;
-                
+
                 $post = Post::create([
                     'author_id' => $author->id,
                     'title' => $title,
@@ -175,13 +177,13 @@ class PostsAndCommentsSeeder extends Seeder
                 // Create 5 to 50 comments for this post
                 $commentsCount = rand(5, 50);
                 $availableComments = $theme['comments'];
-                
+
                 for ($j = 0; $j < $commentsCount; $j++) {
                     // Select a random commenter (can be same user multiple times)
                     $commenter = $commenters->random();
-                    
+
                     // Select a comment from the theme or generate a generic one
-                    if (!empty($availableComments) && rand(1, 100) <= 70) {
+                    if (! empty($availableComments) && rand(1, 100) <= 70) {
                         // 70% chance to use themed comment
                         $commentBody = $availableComments[array_rand($availableComments)];
                     } else {
@@ -216,10 +218,9 @@ class PostsAndCommentsSeeder extends Seeder
         $this->command->info('');
         $this->command->info('✅ Posts and comments created successfully!');
         $this->command->info('');
-        $this->command->info("Summary:");
+        $this->command->info('Summary:');
         $this->command->info("- Total posts created: {$totalPosts}");
         $this->command->info("- Total comments created: {$totalComments}");
-        $this->command->info("- Average comments per post: " . round($totalComments / $totalPosts, 1));
+        $this->command->info('- Average comments per post: '.round($totalComments / $totalPosts, 1));
     }
 }
-

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('role_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();
-            
+
             $table->unique(['role_id', 'user_id']);
         });
     }
@@ -29,4 +29,3 @@ return new class extends Migration
         Schema::dropIfExists('role_user');
     }
 };
-

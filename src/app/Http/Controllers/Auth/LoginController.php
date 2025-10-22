@@ -53,4 +53,3 @@ class LoginController extends Controller
         return redirect()->route('login')->with('success', 'You have been logged out successfully.');
     }
 }
-

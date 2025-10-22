@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('permission_id')->constrained()->onDelete('cascade');
             $table->foreignId('role_id')->constrained()->onDelete('cascade');
             $table->timestamps();
-            
+
             $table->unique(['permission_id', 'role_id']);
         });
     }
@@ -29,4 +29,3 @@ return new class extends Migration
         Schema::dropIfExists('permission_role');
     }
 };
-

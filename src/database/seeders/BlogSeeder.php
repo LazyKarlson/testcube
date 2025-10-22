@@ -19,7 +19,7 @@ class BlogSeeder extends Seeder
     {
         // Get existing users or create some
         $users = User::all();
-        
+
         if ($users->count() < 5) {
             // Create additional users if needed
             $users = User::factory()->count(5)->create();
@@ -29,7 +29,7 @@ class BlogSeeder extends Seeder
         $users->each(function ($user) {
             // Each user creates 3-7 posts
             $postCount = rand(3, 7);
-            
+
             Post::factory()
                 ->count($postCount)
                 ->forAuthor($user)
@@ -42,10 +42,10 @@ class BlogSeeder extends Seeder
                             'published_at' => now()->subDays(rand(1, 30)),
                         ]);
                     }
-                    
+
                     // Add 2-8 comments to each post
                     $commentCount = rand(2, 8);
-                    
+
                     Comment::factory()
                         ->count($commentCount)
                         ->forPost($post)
@@ -54,8 +54,7 @@ class BlogSeeder extends Seeder
         });
 
         $this->command->info('Blog seeded successfully!');
-        $this->command->info('Created posts: ' . Post::count());
-        $this->command->info('Created comments: ' . Comment::count());
+        $this->command->info('Created posts: '.Post::count());
+        $this->command->info('Created comments: '.Comment::count());
     }
 }
-

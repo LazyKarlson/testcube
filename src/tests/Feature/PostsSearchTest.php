@@ -15,7 +15,7 @@ class PostsSearchTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Run seeders to set up roles and permissions
         $this->artisan('db:seed', ['--class' => 'RolesAndPermissionsSeeder']);
     }
@@ -53,14 +53,14 @@ class PostsSearchTest extends TestCase
                     'data',
                     'total',
                     'per_page',
-                ]
+                ],
             ]);
     }
 
     public function test_search_finds_posts_by_title(): void
     {
         $user = User::factory()->create();
-        
+
         Post::factory()->create(['title' => 'Laravel Tutorial', 'body' => 'Some content']);
         Post::factory()->create(['title' => 'PHP Basics', 'body' => 'Other content']);
 
@@ -75,7 +75,7 @@ class PostsSearchTest extends TestCase
     public function test_search_finds_posts_by_body(): void
     {
         $user = User::factory()->create();
-        
+
         Post::factory()->create(['title' => 'My Post', 'body' => 'This is about Laravel framework']);
         Post::factory()->create(['title' => 'Another Post', 'body' => 'This is about PHP']);
 
@@ -89,7 +89,7 @@ class PostsSearchTest extends TestCase
     public function test_search_is_case_insensitive(): void
     {
         $user = User::factory()->create();
-        
+
         Post::factory()->create(['title' => 'LARAVEL Tutorial']);
         Post::factory()->create(['title' => 'laravel Guide']);
         Post::factory()->create(['title' => 'LaRaVeL Tips']);
@@ -103,7 +103,7 @@ class PostsSearchTest extends TestCase
     public function test_search_matches_partial_strings(): void
     {
         $user = User::factory()->create();
-        
+
         Post::factory()->create(['title' => 'Laravel Framework']);
         Post::factory()->create(['title' => 'Lara Croft']);
 
@@ -116,7 +116,7 @@ class PostsSearchTest extends TestCase
     public function test_search_can_filter_by_published_status(): void
     {
         $user = User::factory()->create();
-        
+
         Post::factory()->published()->create(['title' => 'Published Laravel Post']);
         Post::factory()->draft()->create(['title' => 'Draft Laravel Post']);
 
@@ -132,7 +132,7 @@ class PostsSearchTest extends TestCase
     public function test_search_can_filter_by_draft_status(): void
     {
         $user = User::factory()->create();
-        
+
         Post::factory()->published()->create(['title' => 'Published Laravel Post']);
         Post::factory()->draft()->create(['title' => 'Draft Laravel Post']);
 
@@ -148,14 +148,14 @@ class PostsSearchTest extends TestCase
     public function test_search_can_filter_by_published_at_from_date(): void
     {
         $user = User::factory()->create();
-        
+
         Post::factory()->create([
             'title' => 'Old Laravel Post',
-            'published_at' => '2025-09-15'
+            'published_at' => '2025-09-15',
         ]);
         Post::factory()->create([
             'title' => 'New Laravel Post',
-            'published_at' => '2025-10-15'
+            'published_at' => '2025-10-15',
         ]);
 
         $response = $this->actingAs($user)->getJson('/api/posts/search?q=laravel&published_at[from]=2025-10-01');
@@ -169,14 +169,14 @@ class PostsSearchTest extends TestCase
     public function test_search_can_filter_by_published_at_to_date(): void
     {
         $user = User::factory()->create();
-        
+
         Post::factory()->create([
             'title' => 'Old Laravel Post',
-            'published_at' => '2025-09-15'
+            'published_at' => '2025-09-15',
         ]);
         Post::factory()->create([
             'title' => 'New Laravel Post',
-            'published_at' => '2025-10-15'
+            'published_at' => '2025-10-15',
         ]);
 
         $response = $this->actingAs($user)->getJson('/api/posts/search?q=laravel&published_at[to]=2025-09-30');
@@ -190,7 +190,7 @@ class PostsSearchTest extends TestCase
     public function test_search_can_filter_by_date_range(): void
     {
         $user = User::factory()->create();
-        
+
         Post::factory()->create(['title' => 'Post 1', 'published_at' => '2025-09-15']);
         Post::factory()->create(['title' => 'Post 2', 'published_at' => '2025-10-05']);
         Post::factory()->create(['title' => 'Post 3', 'published_at' => '2025-10-15']);
@@ -202,7 +202,7 @@ class PostsSearchTest extends TestCase
         $this->assertEquals('2025-10-01', $response->json('filters.published_from'));
         $this->assertEquals('2025-10-20', $response->json('filters.published_to'));
         $this->assertEquals(2, $response->json('results.total'));
-        
+
         $titles = collect($response->json('results.data'))->pluck('title')->toArray();
         $this->assertContains('Post 2', $titles);
         $this->assertContains('Post 3', $titles);
@@ -221,22 +221,22 @@ class PostsSearchTest extends TestCase
     public function test_search_can_combine_all_filters(): void
     {
         $user = User::factory()->create();
-        
+
         Post::factory()->published()->create([
             'title' => 'Laravel Tutorial',
-            'published_at' => '2025-10-15'
+            'published_at' => '2025-10-15',
         ]);
         Post::factory()->draft()->create([
             'title' => 'Laravel Guide',
-            'published_at' => null
+            'published_at' => null,
         ]);
         Post::factory()->published()->create([
             'title' => 'Laravel Tips',
-            'published_at' => '2025-09-15'
+            'published_at' => '2025-09-15',
         ]);
         Post::factory()->published()->create([
             'title' => 'PHP Basics',
-            'published_at' => '2025-10-10'
+            'published_at' => '2025-10-10',
         ]);
 
         $response = $this->actingAs($user)->getJson('/api/posts/search?q=laravel&status=published&published_at[from]=2025-10-01&published_at[to]=2025-10-31');
@@ -249,7 +249,7 @@ class PostsSearchTest extends TestCase
     public function test_search_can_sort_by_title(): void
     {
         $user = User::factory()->create();
-        
+
         Post::factory()->create(['title' => 'Zebra Laravel']);
         Post::factory()->create(['title' => 'Apple Laravel']);
         Post::factory()->create(['title' => 'Mango Laravel']);
@@ -257,7 +257,7 @@ class PostsSearchTest extends TestCase
         $response = $this->actingAs($user)->getJson('/api/posts/search?q=laravel&sort_by=title&sort_order=asc');
 
         $response->assertStatus(200);
-        
+
         $titles = collect($response->json('results.data'))->pluck('title')->toArray();
         $this->assertEquals('Apple Laravel', $titles[0]);
         $this->assertEquals('Mango Laravel', $titles[1]);
@@ -267,7 +267,7 @@ class PostsSearchTest extends TestCase
     public function test_search_can_sort_by_created_at(): void
     {
         $user = User::factory()->create();
-        
+
         $post1 = Post::factory()->create(['title' => 'Post 1', 'created_at' => now()->subDays(3)]);
         $post2 = Post::factory()->create(['title' => 'Post 2', 'created_at' => now()->subDays(1)]);
         $post3 = Post::factory()->create(['title' => 'Post 3', 'created_at' => now()->subDays(2)]);
@@ -275,7 +275,7 @@ class PostsSearchTest extends TestCase
         $response = $this->actingAs($user)->getJson('/api/posts/search?q=post&sort_by=created_at&sort_order=desc');
 
         $response->assertStatus(200);
-        
+
         $ids = collect($response->json('results.data'))->pluck('id')->toArray();
         $this->assertEquals($post2->id, $ids[0]); // Most recent first
     }
@@ -284,7 +284,7 @@ class PostsSearchTest extends TestCase
     {
         $user = User::factory()->create();
         $author = User::factory()->create(['name' => 'John Doe', 'email' => 'john@example.com']);
-        
+
         Post::factory()->forAuthor($author)->create(['title' => 'Laravel Post']);
 
         $response = $this->actingAs($user)->getJson('/api/posts/search?q=laravel');
@@ -294,7 +294,7 @@ class PostsSearchTest extends TestCase
                 'author' => [
                     'name' => 'John Doe',
                     'email' => 'john@example.com',
-                ]
+                ],
             ]);
     }
 
@@ -302,7 +302,7 @@ class PostsSearchTest extends TestCase
     {
         $user = User::factory()->create();
         $post = Post::factory()->create(['title' => 'Laravel Post']);
-        
+
         Comment::factory()->count(5)->forPost($post)->create();
 
         $response = $this->actingAs($user)->getJson('/api/posts/search?q=laravel');
@@ -316,7 +316,7 @@ class PostsSearchTest extends TestCase
         $user = User::factory()->create();
         $commentAuthor = User::factory()->create(['name' => 'Jane Smith']);
         $post = Post::factory()->create(['title' => 'Laravel Post']);
-        
+
         Comment::factory()->forPost($post)->create(['body' => 'First comment']);
         Comment::factory()->forPost($post)->forAuthor($commentAuthor)->create(['body' => 'Last comment']);
 
@@ -330,7 +330,7 @@ class PostsSearchTest extends TestCase
     public function test_search_pagination_works(): void
     {
         $user = User::factory()->create();
-        
+
         Post::factory()->count(30)->create(['title' => 'Laravel Post']);
 
         $response = $this->actingAs($user)->getJson('/api/posts/search?q=laravel&per_page=10');
@@ -344,7 +344,7 @@ class PostsSearchTest extends TestCase
     public function test_search_returns_empty_results_when_no_matches(): void
     {
         $user = User::factory()->create();
-        
+
         Post::factory()->create(['title' => 'PHP Tutorial', 'body' => 'PHP content']);
 
         $response = $this->actingAs($user)->getJson('/api/posts/search?q=laravel');
@@ -384,4 +384,3 @@ class PostsSearchTest extends TestCase
             ->assertJsonValidationErrors(['per_page']);
     }
 }
-

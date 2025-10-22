@@ -99,10 +99,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function hasAllRoles(array $roles): bool
     {
         foreach ($roles as $role) {
-            if (!$this->hasRole($role)) {
+            if (! $this->hasRole($role)) {
                 return false;
             }
         }
+
         return true;
     }
 
@@ -146,15 +147,15 @@ class User extends Authenticatable implements MustVerifyEmail
      * Check if user can perform action on resource.
      * Compatible with Laravel's can() method signature.
      *
-     * @param mixed $abilities Can be a string permission, or action_resource format
-     * @param array|mixed $arguments Optional arguments (resource name if first param is action)
-     * @return bool
+     * @param  mixed  $abilities  Can be a string permission, or action_resource format
+     * @param  array|mixed  $arguments  Optional arguments (resource name if first param is action)
      */
     public function can($abilities, $arguments = []): bool
     {
         // If called with two string arguments (action, resource), convert to permission format
         if (is_string($abilities) && is_string($arguments)) {
             $permission = "{$abilities}_{$arguments}";
+
             return $this->hasPermission($permission);
         }
 

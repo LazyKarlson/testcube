@@ -20,13 +20,13 @@ class RolesAndPermissionsSeeder extends Seeder
             ['name' => 'read_posts', 'description' => 'Read posts'],
             ['name' => 'update_posts', 'description' => 'Update posts'],
             ['name' => 'delete_posts', 'description' => 'Delete posts'],
-            
+
             // Comment permissions
             ['name' => 'create_comments', 'description' => 'Create comments'],
             ['name' => 'read_comments', 'description' => 'Read comments'],
             ['name' => 'update_comments', 'description' => 'Update comments'],
             ['name' => 'delete_comments', 'description' => 'Delete comments'],
-            
+
             // User permissions
             ['name' => 'create_users', 'description' => 'Create users'],
             ['name' => 'read_users', 'description' => 'Read users'],
@@ -94,4 +94,3 @@ class RolesAndPermissionsSeeder extends Seeder
         $this->command->info('Viewer role: Read posts and comments');
     }
 }
-

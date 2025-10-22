@@ -15,24 +15,24 @@ class UserCanMethodTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Create permissions
         $createPosts = Permission::create([
             'name' => 'create_posts',
-            'description' => 'Create posts'
+            'description' => 'Create posts',
         ]);
-        
+
         $readPosts = Permission::create([
             'name' => 'read_posts',
-            'description' => 'Read posts'
+            'description' => 'Read posts',
         ]);
-        
+
         // Create role with permissions
         $role = Role::create([
             'name' => 'author',
-            'description' => 'Author role'
+            'description' => 'Author role',
         ]);
-        
+
         $role->permissions()->attach([$createPosts->id, $readPosts->id]);
     }
 
@@ -94,17 +94,17 @@ class UserCanMethodTest extends TestCase
         // Create another permission
         $updatePosts = Permission::create([
             'name' => 'update_posts',
-            'description' => 'Update posts'
+            'description' => 'Update posts',
         ]);
-        
+
         // Create editor role
         $editorRole = Role::create([
             'name' => 'editor',
-            'description' => 'Editor role'
+            'description' => 'Editor role',
         ]);
-        
+
         $editorRole->permissions()->attach([$updatePosts->id]);
-        
+
         $user = User::factory()->create();
         $user->assignRole('author');
         $user->assignRole('editor');
@@ -114,4 +114,3 @@ class UserCanMethodTest extends TestCase
         $this->assertTrue($user->can('update', 'posts')); // from editor
     }
 }
-

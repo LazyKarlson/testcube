@@ -6,11 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -18,7 +15,6 @@ class AuthController extends Controller
     /**
      * Register a new user
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function register(Request $request)
@@ -61,7 +57,6 @@ class AuthController extends Controller
     /**
      * Login user and create token
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function login(Request $request)
@@ -73,7 +68,7 @@ class AuthController extends Controller
 
         $user = User::where('email', $validated['email'])->first();
 
-        if (!$user || !Hash::check($validated['password'], $user->password)) {
+        if (! $user || ! Hash::check($validated['password'], $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
@@ -100,7 +95,6 @@ class AuthController extends Controller
     /**
      * Logout user (revoke token)
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function logout(Request $request)
@@ -116,7 +110,6 @@ class AuthController extends Controller
     /**
      * Get authenticated user
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function user(Request $request)
@@ -141,7 +134,6 @@ class AuthController extends Controller
     /**
      * Send email verification notification
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function sendVerificationEmail(Request $request)
@@ -162,14 +154,13 @@ class AuthController extends Controller
     /**
      * Verify email address
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function verifyEmail(Request $request)
     {
         $user = User::findOrFail($request->route('id'));
 
-        if (!hash_equals(
+        if (! hash_equals(
             (string) $request->route('hash'),
             sha1($user->getEmailForVerification())
         )) {
@@ -196,7 +187,6 @@ class AuthController extends Controller
     /**
      * Check if email is verified
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function checkEmailVerification(Request $request)
@@ -207,4 +197,3 @@ class AuthController extends Controller
         ]);
     }
 }
-

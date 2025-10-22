@@ -15,13 +15,13 @@ class CheckPermission
      */
     public function handle(Request $request, Closure $next, string $permission): Response
     {
-        if (!$request->user()) {
+        if (! $request->user()) {
             return response()->json([
                 'message' => 'Unauthenticated.',
             ], 401);
         }
 
-        if (!$request->user()->hasPermission($permission)) {
+        if (! $request->user()->hasPermission($permission)) {
             return response()->json([
                 'message' => 'Forbidden. You do not have the required permission.',
                 'required_permission' => $permission,
@@ -31,4 +31,3 @@ class CheckPermission
         return $next($request);
     }
 }
-
