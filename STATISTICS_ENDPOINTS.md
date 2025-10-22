@@ -4,6 +4,8 @@
 
 Three public statistics endpoints provide comprehensive analytics for posts, comments, and users. All endpoints are publicly accessible with rate limiting (60 requests/minute).
 
+All statistics endpoints are handled by a single `StatsController` (`App\Http\Controllers\Api\StatsController`) for better organization and maintainability.
+
 ---
 
 ## Endpoints
