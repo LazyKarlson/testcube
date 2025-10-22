@@ -35,6 +35,9 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
+        // Assign default author role
+        $user->assignRole('author');
+
         // Fire the Registered event to trigger email verification
         event(new Registered($user));
 
@@ -47,6 +50,7 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'email_verified_at' => $user->email_verified_at,
+                'roles' => $user->roles->pluck('name'),
                 'created_at' => $user->created_at,
             ],
             'access_token' => $token,
@@ -86,6 +90,7 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'roles' => $user->roles->pluck('name'),
             ],
             'access_token' => $token,
             'token_type' => 'Bearer',
@@ -116,14 +121,19 @@ class AuthController extends Controller
      */
     public function user(Request $request)
     {
+        $user = $request->user();
+        $user->load('roles.permissions');
+
         return response()->json([
             'user' => [
-                'id' => $request->user()->id,
-                'name' => $request->user()->name,
-                'email' => $request->user()->email,
-                'email_verified_at' => $request->user()->email_verified_at,
-                'created_at' => $request->user()->created_at,
-                'updated_at' => $request->user()->updated_at,
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'email_verified_at' => $user->email_verified_at,
+                'roles' => $user->roles->pluck('name'),
+                'permissions' => $user->roles->flatMap->permissions->pluck('name')->unique()->values(),
+                'created_at' => $user->created_at,
+                'updated_at' => $user->updated_at,
             ],
         ]);
     }

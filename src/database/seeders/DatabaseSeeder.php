@@ -15,11 +15,38 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Seed roles and permissions first
+        $this->call(RolesAndPermissionsSeeder::class);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Create test users with roles
+        $admin = User::factory()->create([
+            'name' => 'Admin User',
+            'email' => 'admin@example.com',
         ]);
+        $admin->assignRole('admin');
+
+        $editor = User::factory()->create([
+            'name' => 'Editor User',
+            'email' => 'editor@example.com',
+        ]);
+        $editor->assignRole('editor');
+
+        $author = User::factory()->create([
+            'name' => 'Author User',
+            'email' => 'author@example.com',
+        ]);
+        $author->assignRole('author');
+
+        $viewer = User::factory()->create([
+            'name' => 'Viewer User',
+            'email' => 'viewer@example.com',
+        ]);
+        $viewer->assignRole('viewer');
+
+        $this->command->info('Test users created:');
+        $this->command->info('Admin: admin@example.com / password');
+        $this->command->info('Editor: editor@example.com / password');
+        $this->command->info('Author: author@example.com / password');
+        $this->command->info('Viewer: viewer@example.com / password');
     }
 }
