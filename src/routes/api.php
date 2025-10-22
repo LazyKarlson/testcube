@@ -35,6 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Posts - read access for all authenticated users
     Route::get('/posts', [PostController::class, 'index']);
+    Route::get('/posts/search', [PostController::class, 'search']);
     Route::get('/posts/{post}', [PostController::class, 'show']);
 
     // Posts - create/update/delete require permissions

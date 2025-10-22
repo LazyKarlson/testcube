@@ -173,8 +173,109 @@ class PostController extends Controller
     public function myPosts(Request $request)
     {
         $posts = $request->user()->posts()->latest()->paginate(15);
-        
+
         return response()->json($posts);
+    }
+
+    /**
+     * Search posts with filters
+     *
+     * Query parameters:
+     * - q: search query (searches in title and body, case-insensitive)
+     * - status: filter by status ('draft' or 'published')
+     * - published_at[from]: start date for published_at range (Y-m-d format)
+     * - published_at[to]: end date for published_at range (Y-m-d format)
+     * - sort_by: 'published_at' (default), 'title', 'created_at'
+     * - sort_order: 'desc' (default), 'asc'
+     * - per_page: items per page (default: 25, max: 100)
+     */
+    public function search(Request $request)
+    {
+        // Validate query parameters
+        $validated = $request->validate([
+            'q' => 'required|string|min:1',
+            'status' => 'sometimes|in:draft,published',
+            'published_at.from' => 'sometimes|date',
+            'published_at.to' => 'sometimes|date|after_or_equal:published_at.from',
+            'sort_by' => 'sometimes|in:published_at,title,created_at',
+            'sort_order' => 'sometimes|in:asc,desc',
+            'per_page' => 'sometimes|integer|min:1|max:100',
+        ]);
+
+        // Get parameters
+        $searchQuery = $validated['q'];
+        $status = $validated['status'] ?? null;
+        $publishedFrom = $validated['published_at']['from'] ?? null;
+        $publishedTo = $validated['published_at']['to'] ?? null;
+        $sortBy = $validated['sort_by'] ?? 'published_at';
+        $sortOrder = $validated['sort_order'] ?? 'desc';
+        $perPage = $validated['per_page'] ?? 25;
+
+        // Build query
+        $query = Post::query();
+
+        // Case-insensitive search in title and body
+        $query->where(function ($q) use ($searchQuery) {
+            $q->whereRaw('LOWER(title) LIKE ?', ['%' . strtolower($searchQuery) . '%'])
+              ->orWhereRaw('LOWER(body) LIKE ?', ['%' . strtolower($searchQuery) . '%']);
+        });
+
+        // Filter by status
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        // Filter by published_at date range
+        if ($publishedFrom) {
+            $query->whereDate('published_at', '>=', $publishedFrom);
+        }
+        if ($publishedTo) {
+            $query->whereDate('published_at', '<=', $publishedTo);
+        }
+
+        // Load relationships and counts
+        $posts = $query->with([
+            'author:id,name,email',
+            'comments' => function ($query) {
+                $query->latest()->limit(1)->with('author:id,name');
+            }
+        ])
+        ->withCount('comments')
+        ->orderBy($sortBy, $sortOrder)
+        ->paginate($perPage);
+
+        // Transform the data to include required fields
+        $posts->getCollection()->transform(function ($post) {
+            $lastComment = $post->comments->first();
+
+            return [
+                'id' => $post->id,
+                'title' => $post->title,
+                'status' => $post->status,
+                'body' => $post->body,
+                'created_at' => $post->created_at,
+                'published_at' => $post->published_at,
+                'author' => [
+                    'name' => $post->author->name,
+                    'email' => $post->author->email,
+                ],
+                'comments_count' => $post->comments_count,
+                'last_comment' => $lastComment ? [
+                    'body' => $lastComment->body,
+                    'author_name' => $lastComment->author->name,
+                ] : null,
+            ];
+        });
+
+        return response()->json([
+            'query' => $searchQuery,
+            'filters' => [
+                'status' => $status,
+                'published_from' => $publishedFrom,
+                'published_to' => $publishedTo,
+            ],
+            'results' => $posts,
+        ]);
     }
 }
 

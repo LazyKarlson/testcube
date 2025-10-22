@@ -175,6 +175,52 @@ GET /api/posts?sort_by=created_at&sort_order=desc
 
 **See detailed documentation**: `POSTS_LIST_ENDPOINT.md`
 
+#### Search Posts (All authenticated users)
+```bash
+GET /api/posts/search
+Authorization: Bearer {token}
+
+# Required parameter:
+# - q: search query (case-insensitive, searches title and body)
+
+# Optional parameters:
+# - status: draft, published
+# - published_at[from]: Y-m-d format (e.g., 2025-10-01)
+# - published_at[to]: Y-m-d format (e.g., 2025-10-31)
+# - sort_by: published_at (default), title, created_at
+# - sort_order: desc (default), asc
+# - per_page: 25 (default), max 100
+# - page: 1 (default)
+```
+
+**Response includes**:
+- Search query and applied filters
+- Post details (same as list endpoint)
+- Author name and email
+- Comments count
+- Last comment body and author name
+- Pagination metadata
+
+**Examples**:
+```bash
+# Basic search
+GET /api/posts/search?q=laravel
+
+# Search published posts only
+GET /api/posts/search?q=tutorial&status=published
+
+# Search with date range
+GET /api/posts/search?q=php&published_at[from]=2025-10-01&published_at[to]=2025-10-31
+
+# Search draft posts
+GET /api/posts/search?q=work&status=draft
+
+# Search with all filters
+GET /api/posts/search?q=api&status=published&published_at[from]=2025-10-01&sort_by=title&sort_order=asc
+```
+
+**See detailed documentation**: `POSTS_SEARCH_ENDPOINT.md`
+
 #### Get Single Post (All authenticated users)
 ```bash
 GET /api/posts/{post_id}
