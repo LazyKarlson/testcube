@@ -2,6 +2,29 @@
 
 This application implements a comprehensive Role-Based Access Control (RBAC) system with three predefined roles and granular permissions.
 
+## Public Access
+
+**Important**: Posts and comments have **public read access** without authentication:
+
+✅ **Public Endpoints** (No authentication required):
+- `GET /api/posts` - List all posts
+- `GET /api/posts/search` - Search posts
+- `GET /api/posts/{id}` - View single post
+- `GET /api/posts/{post}/comments` - List comments for a post
+- `GET /api/comments/{id}` - View single comment
+
+🔒 **Rate Limiting**: Public endpoints are rate-limited to **60 requests per minute** per IP address.
+
+❌ **Authentication Required** for:
+- Creating, updating, or deleting posts/comments
+- Viewing user's own posts (`/api/my-posts`)
+- User management
+- Role management
+
+**See detailed documentation**: `PUBLIC_API_ACCESS.md`
+
+---
+
 ## Roles Overview
 
 ### 1. **Admin**
@@ -139,10 +162,13 @@ Content-Type: application/json
 
 ### Post Endpoints
 
-#### List All Posts (All authenticated users)
+**Note**: All read-only post endpoints are publicly accessible (no authentication required) with rate limiting (60 requests/minute).
+
+#### List All Posts (Public access)
 ```bash
 GET /api/posts
-Authorization: Bearer {token}
+# No authentication required
+# Rate limit: 60 requests/minute
 
 # Query parameters (all optional):
 # - sort_by: published_at (default), title, created_at
@@ -175,10 +201,11 @@ GET /api/posts?sort_by=created_at&sort_order=desc
 
 **See detailed documentation**: `POSTS_LIST_ENDPOINT.md`
 
-#### Search Posts (All authenticated users)
+#### Search Posts (Public access)
 ```bash
 GET /api/posts/search
-Authorization: Bearer {token}
+# No authentication required
+# Rate limit: 60 requests/minute
 
 # Required parameter:
 # - q: search query (case-insensitive, searches title and body)
@@ -221,10 +248,11 @@ GET /api/posts/search?q=api&status=published&published_at[from]=2025-10-01&sort_
 
 **See detailed documentation**: `POSTS_SEARCH_ENDPOINT.md`
 
-#### Get Single Post (All authenticated users)
+#### Get Single Post (Public access)
 ```bash
 GET /api/posts/{post_id}
-Authorization: Bearer {token}
+# No authentication required
+# Rate limit: 60 requests/minute
 ```
 
 #### Create Post (Requires: create_posts permission)
@@ -286,16 +314,20 @@ Authorization: Bearer {token}
 
 ### Comment Endpoints
 
-#### List Comments for a Post (All authenticated users)
+**Note**: All read-only comment endpoints are publicly accessible (no authentication required) with rate limiting (60 requests/minute).
+
+#### List Comments for a Post (Public access)
 ```bash
 GET /api/posts/{post_id}/comments
-Authorization: Bearer {token}
+# No authentication required
+# Rate limit: 60 requests/minute
 ```
 
-#### Get Single Comment (All authenticated users)
+#### Get Single Comment (Public access)
 ```bash
 GET /api/comments/{comment_id}
-Authorization: Bearer {token}
+# No authentication required
+# Rate limit: 60 requests/minute
 ```
 
 #### Create Comment (Requires: create_comments permission)

@@ -17,6 +17,18 @@ Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
     ->middleware(['signed'])
     ->name('verification.verify');
 
+// Public read-only routes with rate limiting (60 requests per minute)
+Route::middleware('throttle:60,1')->group(function () {
+    // Posts - public read access
+    Route::get('/posts', [PostController::class, 'index']);
+    Route::get('/posts/search', [PostController::class, 'search']);
+    Route::get('/posts/{post}', [PostController::class, 'show']);
+
+    // Comments - public read access
+    Route::get('/posts/{post}/comments', [CommentController::class, 'index']);
+    Route::get('/comments/{comment}', [CommentController::class, 'show']);
+});
+
 // Protected routes (authentication required)
 Route::middleware('auth:sanctum')->group(function () {
     // Auth routes
@@ -33,11 +45,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/roles', [RoleController::class, 'index']);
     Route::get('/users/{user}/roles', [RoleController::class, 'getUserRoles']);
 
-    // Posts - read access for all authenticated users
-    Route::get('/posts', [PostController::class, 'index']);
-    Route::get('/posts/search', [PostController::class, 'search']);
-    Route::get('/posts/{post}', [PostController::class, 'show']);
-
     // Posts - create/update/delete require permissions
     Route::middleware('permission:create_posts')->group(function () {
         Route::post('/posts', [PostController::class, 'store']);
@@ -53,10 +60,6 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('/my-posts', [PostController::class, 'myPosts']);
-
-    // Comments - read access for all authenticated users
-    Route::get('/posts/{post}/comments', [CommentController::class, 'index']);
-    Route::get('/comments/{comment}', [CommentController::class, 'show']);
 
     // Comments - create/update/delete require permissions
     Route::middleware('permission:create_comments')->group(function () {
