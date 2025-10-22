@@ -7,13 +7,14 @@ use App\Models\Comment;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class StatsController extends Controller
 {
     /**
      * Get post statistics.
-     * 
+     *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
@@ -27,6 +28,28 @@ class StatsController extends Controller
 
         $dateFrom = $validated['date_from'] ?? null;
         $dateTo = $validated['date_to'] ?? null;
+
+        // Create cache key based on parameters
+        $cacheKey = 'api:stats:posts';
+        if ($dateFrom || $dateTo) {
+            $cacheKey .= ':' . ($dateFrom ?? 'null') . ':' . ($dateTo ?? 'null');
+        }
+
+        // Cache for 15 minutes (900 seconds)
+        return Cache::remember($cacheKey, 900, function () use ($dateFrom, $dateTo) {
+            return $this->getPostStats($dateFrom, $dateTo);
+        });
+    }
+
+    /**
+     * Get post statistics data.
+     *
+     * @param string|null $dateFrom
+     * @param string|null $dateTo
+     * @return \Illuminate\Http\JsonResponse
+     */
+    private function getPostStats($dateFrom, $dateTo)
+    {
 
         // 1. Number of posts by status
         $postsByStatus = Post::select('status', DB::raw('count(*) as count'))
@@ -104,7 +127,7 @@ class StatsController extends Controller
 
     /**
      * Get comment statistics.
-     * 
+     *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
@@ -118,6 +141,28 @@ class StatsController extends Controller
 
         $dateFrom = $validated['date_from'] ?? null;
         $dateTo = $validated['date_to'] ?? null;
+
+        // Create cache key based on parameters
+        $cacheKey = 'api:stats:comments';
+        if ($dateFrom || $dateTo) {
+            $cacheKey .= ':' . ($dateFrom ?? 'null') . ':' . ($dateTo ?? 'null');
+        }
+
+        // Cache for 15 minutes (900 seconds)
+        return Cache::remember($cacheKey, 900, function () use ($dateFrom, $dateTo) {
+            return $this->getCommentStats($dateFrom, $dateTo);
+        });
+    }
+
+    /**
+     * Get comment statistics data.
+     *
+     * @param string|null $dateFrom
+     * @param string|null $dateTo
+     * @return \Illuminate\Http\JsonResponse
+     */
+    private function getCommentStats($dateFrom, $dateTo)
+    {
 
         // 1. Total number of comments
         $totalComments = Comment::count();
@@ -208,11 +253,24 @@ class StatsController extends Controller
 
     /**
      * Get user statistics.
-     * 
+     *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function users(Request $request)
+    {
+        // Cache for 15 minutes (900 seconds)
+        return Cache::remember('api:stats:users', 900, function () {
+            return $this->getUserStats();
+        });
+    }
+
+    /**
+     * Get user statistics data.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    private function getUserStats()
     {
         // 1. Number of users by role
         $usersByRole = DB::table('role_user')

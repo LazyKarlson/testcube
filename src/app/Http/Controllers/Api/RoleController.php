@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class RoleController extends Controller
 {
@@ -14,18 +15,22 @@ class RoleController extends Controller
      */
     public function metaRoles()
     {
-        $roles = Role::with('permissions')->get();
+        // Cache for 1 hour (3600 seconds)
+        // Roles rarely change
+        return Cache::remember('api:meta:roles', 3600, function () {
+            $roles = Role::with('permissions')->get();
 
-        return response()->json([
-            'roles' => $roles->map(function ($role) {
-                return [
-                    'id' => $role->id,
-                    'name' => $role->name,
-                    'description' => $role->description,
-                    'permissions' => $role->permissions->pluck('name'),
-                ];
-            }),
-        ]);
+            return response()->json([
+                'roles' => $roles->map(function ($role) {
+                    return [
+                        'id' => $role->id,
+                        'name' => $role->name,
+                        'description' => $role->description,
+                        'permissions' => $role->permissions->pluck('name'),
+                    ];
+                }),
+            ]);
+        });
     }
 
     /**
@@ -33,18 +38,21 @@ class RoleController extends Controller
      */
     public function index()
     {
-        $roles = Role::with('permissions')->get();
+        // Share cache with metaRoles since data is identical
+        return Cache::remember('api:meta:roles', 3600, function () {
+            $roles = Role::with('permissions')->get();
 
-        return response()->json([
-            'roles' => $roles->map(function ($role) {
-                return [
-                    'id' => $role->id,
-                    'name' => $role->name,
-                    'description' => $role->description,
-                    'permissions' => $role->permissions->pluck('name'),
-                ];
-            }),
-        ]);
+            return response()->json([
+                'roles' => $roles->map(function ($role) {
+                    return [
+                        'id' => $role->id,
+                        'name' => $role->name,
+                        'description' => $role->description,
+                        'permissions' => $role->permissions->pluck('name'),
+                    ];
+                }),
+            ]);
+        });
     }
 
     /**
@@ -57,6 +65,9 @@ class RoleController extends Controller
         ]);
 
         $user->assignRole($validated['role']);
+
+        // Invalidate user statistics cache (users by role changed)
+        Cache::forget('api:stats:users');
 
         return response()->json([
             'message' => 'Role assigned successfully',
@@ -79,6 +90,9 @@ class RoleController extends Controller
         ]);
 
         $user->removeRole($validated['role']);
+
+        // Invalidate user statistics cache (users by role changed)
+        Cache::forget('api:stats:users');
 
         return response()->json([
             'message' => 'Role removed successfully',

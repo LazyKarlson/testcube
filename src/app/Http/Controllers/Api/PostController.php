@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 
 class PostController extends Controller
@@ -31,42 +32,49 @@ class PostController extends Controller
         $sortBy = $validated['sort_by'] ?? 'published_at';
         $sortOrder = $validated['sort_order'] ?? 'desc';
         $perPage = $validated['per_page'] ?? 25;
+        $page = $request->input('page', 1);
 
-        // Build query with relationships and counts
-        $posts = Post::with([
-            'author:id,name,email',
-            'comments' => function ($query) {
-                $query->latest()->limit(1)->with('author:id,name');
-            }
-        ])
-        ->withCount('comments')
-        ->orderBy($sortBy, $sortOrder)
-        ->paginate($perPage);
+        // Create cache key from all parameters
+        $cacheKey = "api:posts:page:{$page}:sort:{$sortBy}:{$sortOrder}:per_page:{$perPage}";
 
-        // Transform the data to include required fields
-        $posts->getCollection()->transform(function ($post) {
-            $lastComment = $post->comments->first();
+        // Cache for 5 minutes (300 seconds)
+        return Cache::remember($cacheKey, 300, function () use ($sortBy, $sortOrder, $perPage) {
+            // Build query with relationships and counts
+            $posts = Post::with([
+                'author:id,name,email',
+                'comments' => function ($query) {
+                    $query->latest()->limit(1)->with('author:id,name');
+                }
+            ])
+            ->withCount('comments')
+            ->orderBy($sortBy, $sortOrder)
+            ->paginate($perPage);
 
-            return [
-                'id' => $post->id,
-                'title' => $post->title,
-                'status' => $post->status,
-                'body' => $post->body,
-                'created_at' => $post->created_at,
-                'published_at' => $post->published_at,
-                'author' => [
-                    'name' => $post->author->name,
-                    'email' => $post->author->email,
-                ],
-                'comments_count' => $post->comments_count,
-                'last_comment' => $lastComment ? [
-                    'body' => $lastComment->body,
-                    'author_name' => $lastComment->author->name,
-                ] : null,
-            ];
+            // Transform the data to include required fields
+            $posts->getCollection()->transform(function ($post) {
+                $lastComment = $post->comments->first();
+
+                return [
+                    'id' => $post->id,
+                    'title' => $post->title,
+                    'status' => $post->status,
+                    'body' => $post->body,
+                    'created_at' => $post->created_at,
+                    'published_at' => $post->published_at,
+                    'author' => [
+                        'name' => $post->author->name,
+                        'email' => $post->author->email,
+                    ],
+                    'comments_count' => $post->comments_count,
+                    'last_comment' => $lastComment ? [
+                        'body' => $lastComment->body,
+                        'author_name' => $lastComment->author->name,
+                    ] : null,
+                ];
+            });
+
+            return response()->json($posts);
         });
-
-        return response()->json($posts);
     }
 
     /**
@@ -93,6 +101,8 @@ class PostController extends Controller
 
         $post = $request->user()->posts()->create($validated);
 
+        // Cache will be cleared automatically by PostObserver
+
         return response()->json([
             'message' => 'Post created successfully',
             'post' => $post->load('author:id,name,email'),
@@ -104,9 +114,14 @@ class PostController extends Controller
      */
     public function show(Post $post)
     {
-        return response()->json([
-            'post' => $post->load(['author:id,name,email', 'comments.user:id,name,email']),
-        ]);
+        $cacheKey = "api:post:{$post->id}";
+
+        // Cache for 10 minutes (600 seconds)
+        return Cache::remember($cacheKey, 600, function () use ($post) {
+            return response()->json([
+                'post' => $post->load(['author:id,name,email', 'comments.author:id,name,email']),
+            ]);
+        });
     }
 
     /**
@@ -142,6 +157,8 @@ class PostController extends Controller
 
         $post->update($validated);
 
+        // Cache will be cleared automatically by PostObserver
+
         return response()->json([
             'message' => 'Post updated successfully',
             'post' => $post->load('author:id,name,email'),
@@ -161,6 +178,8 @@ class PostController extends Controller
         }
 
         $post->delete();
+
+        // Cache will be cleared automatically by PostObserver
 
         return response()->json([
             'message' => 'Post deleted successfully',
@@ -277,5 +296,6 @@ class PostController extends Controller
             'results' => $posts,
         ]);
     }
+
 }
 
