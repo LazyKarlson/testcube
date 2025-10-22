@@ -35,6 +35,16 @@ All comment read endpoints are publicly accessible:
 | `/api/posts/{post}/comments` | GET | List comments for a post | 60/min |
 | `/api/comments/{id}` | GET | Get single comment details | 60/min |
 
+### Statistics (Read-Only)
+
+All statistics endpoints are publicly accessible:
+
+| Endpoint | Method | Description | Rate Limit |
+|----------|--------|-------------|------------|
+| `/api/stats/posts` | GET | Post statistics and analytics | 60/min |
+| `/api/stats/comments` | GET | Comment statistics and activity | 60/min |
+| `/api/stats/users` | GET | User statistics and rankings | 60/min |
+
 ---
 
 ## Rate Limiting
@@ -126,6 +136,28 @@ curl -X GET http://localhost:85/api/posts/1/comments \
 #### Get Single Comment
 ```bash
 curl -X GET http://localhost:85/api/comments/1 \
+  -H "Accept: application/json"
+```
+
+#### Get Post Statistics
+```bash
+curl -X GET http://localhost:85/api/stats/posts \
+  -H "Accept: application/json"
+
+# With date range
+curl -X GET "http://localhost:85/api/stats/posts?date_from=2024-01-01&date_to=2024-12-31" \
+  -H "Accept: application/json"
+```
+
+#### Get Comment Statistics
+```bash
+curl -X GET http://localhost:85/api/stats/comments \
+  -H "Accept: application/json"
+```
+
+#### Get User Statistics
+```bash
+curl -X GET http://localhost:85/api/stats/users \
   -H "Accept: application/json"
 ```
 
@@ -262,6 +294,9 @@ if (results.error) {
 - View single post (`GET /api/posts/{id}`)
 - List post comments (`GET /api/posts/{post}/comments`)
 - View single comment (`GET /api/comments/{id}`)
+- View post statistics (`GET /api/stats/posts`)
+- View comment statistics (`GET /api/stats/comments`)
+- View user statistics (`GET /api/stats/users`)
 
 ❌ **Not Allowed** (Requires Authentication):
 - Create posts

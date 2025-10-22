@@ -2,9 +2,12 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CommentController;
+use App\Http\Controllers\Api\CommentStatsController;
 use App\Http\Controllers\Api\PostController;
+use App\Http\Controllers\Api\PostStatsController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\UserStatsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -30,6 +33,11 @@ Route::middleware('throttle:60,1')->group(function () {
     // Comments - public read access
     Route::get('/posts/{post}/comments', [CommentController::class, 'index']);
     Route::get('/comments/{comment}', [CommentController::class, 'show']);
+
+    // Statistics - public read access
+    Route::get('/stats/posts', [PostStatsController::class, 'index']);
+    Route::get('/stats/comments', [CommentStatsController::class, 'index']);
+    Route::get('/stats/users', [UserStatsController::class, 'index']);
 });
 
 // Protected routes (authentication required)

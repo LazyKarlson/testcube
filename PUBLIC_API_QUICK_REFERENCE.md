@@ -23,6 +23,14 @@
 | `/api/posts/{post}/comments` | GET | List post comments | 60/min |
 | `/api/comments/{id}` | GET | Get single comment | 60/min |
 
+### Statistics
+
+| Endpoint | Method | Description | Rate Limit |
+|----------|--------|-------------|------------|
+| `/api/stats/posts` | GET | Post statistics | 60/min |
+| `/api/stats/comments` | GET | Comment statistics | 60/min |
+| `/api/stats/users` | GET | User statistics | 60/min |
+
 ---
 
 ## Quick Examples
@@ -55,6 +63,21 @@ curl -X GET http://localhost:85/api/posts/1/comments
 ### Get Single Comment
 ```bash
 curl -X GET http://localhost:85/api/comments/1
+```
+
+### Get Post Statistics
+```bash
+curl -X GET http://localhost:85/api/stats/posts
+```
+
+### Get Comment Statistics
+```bash
+curl -X GET http://localhost:85/api/stats/comments
+```
+
+### Get User Statistics
+```bash
+curl -X GET http://localhost:85/api/stats/users
 ```
 
 ---
@@ -123,6 +146,9 @@ try {
 - View post
 - List comments
 - View comment
+- Post statistics
+- Comment statistics
+- User statistics
 
 ### ❌ Requires Authentication
 - Create post/comment
