@@ -2,13 +2,21 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Contracts\CacheServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
+use App\Services\PostService;
+use App\Transformers\PostTransformer;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 
 class PostController extends Controller
 {
+    public function __construct(
+        private PostService $postService,
+        private PostTransformer $transformer,
+        private CacheServiceInterface $cache
+    ) {}
+
     /**
      * Display a listing of posts with pagination and sorting
      *
@@ -37,40 +45,13 @@ class PostController extends Controller
         $cacheKey = "api:posts:page:{$page}:sort:{$sortBy}:{$sortOrder}:per_page:{$perPage}";
 
         // Cache for 5 minutes (300 seconds)
-        return Cache::remember($cacheKey, 300, function () use ($sortBy, $sortOrder, $perPage) {
-            // Build query with relationships and counts
-            $posts = Post::with([
-                'author:id,name,email',
-                'comments' => function ($query) {
-                    $query->latest()->limit(1)->with('author:id,name');
-                },
-            ])
-                ->withCount('comments')
-                ->orderBy($sortBy, $sortOrder)
-                ->paginate($perPage);
+        return $this->cache->remember($cacheKey, 300, function () use ($sortBy, $sortOrder, $perPage) {
+            $posts = $this->postService->getPaginated($perPage, $sortBy, $sortOrder);
 
-            // Transform the data to include required fields
-            $posts->getCollection()->transform(function ($post) {
-                $lastComment = $post->comments->first();
-
-                return [
-                    'id' => $post->id,
-                    'title' => $post->title,
-                    'status' => $post->status,
-                    'body' => $post->body,
-                    'created_at' => $post->created_at,
-                    'published_at' => $post->published_at,
-                    'author' => [
-                        'name' => $post->author->name,
-                        'email' => $post->author->email,
-                    ],
-                    'comments_count' => $post->comments_count,
-                    'last_comment' => $lastComment ? [
-                        'body' => $lastComment->body,
-                        'author_name' => $lastComment->author->name,
-                    ] : null,
-                ];
-            });
+            // Transform the data
+            $posts->setCollection(
+                $this->transformer->transformCollection($posts->getCollection())
+            );
 
             return response()->json($posts);
         });
@@ -81,6 +62,8 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', Post::class);
+
         $validated = $request->validate([
             'title' => 'required|string|max:255|unique:posts,title',
             'body' => 'required|string',
@@ -88,19 +71,7 @@ class PostController extends Controller
             'published_at' => 'sometimes|nullable|date',
         ]);
 
-        // Auto-set published_at if status is published and published_at is not provided
-        if (isset($validated['status']) && $validated['status'] === 'published' && ! isset($validated['published_at'])) {
-            $validated['published_at'] = now();
-        }
-
-        // Default status to draft if not provided
-        if (! isset($validated['status'])) {
-            $validated['status'] = 'draft';
-        }
-
-        $post = $request->user()->posts()->create($validated);
-
-        // Cache will be cleared automatically by PostObserver
+        $post = $this->postService->create($request->user(), $validated);
 
         return response()->json([
             'message' => 'Post created successfully',
@@ -113,12 +84,16 @@ class PostController extends Controller
      */
     public function show(Post $post)
     {
+        $this->authorize('view', $post);
+
         $cacheKey = "api:post:{$post->id}";
 
         // Cache for 10 minutes (600 seconds)
-        return Cache::remember($cacheKey, 600, function () use ($post) {
+        return $this->cache->remember($cacheKey, 600, function () use ($post) {
+            $post->load(['author:id,name,email', 'comments.author:id,name,email']);
+
             return response()->json([
-                'post' => $post->load(['author:id,name,email', 'comments.author:id,name,email']),
+                'post' => $this->transformer->transformWithDetails($post),
             ]);
         });
     }
@@ -128,12 +103,7 @@ class PostController extends Controller
      */
     public function update(Request $request, Post $post)
     {
-        // Check if user owns the post or is admin
-        if ($post->author_id !== $request->user()->id && ! $request->user()->isAdmin()) {
-            return response()->json([
-                'message' => 'Forbidden. You can only update your own posts.',
-            ], 403);
-        }
+        $this->authorize('update', $post);
 
         $validated = $request->validate([
             'title' => 'sometimes|required|string|max:255|unique:posts,title,'.$post->id,
@@ -142,21 +112,7 @@ class PostController extends Controller
             'published_at' => 'sometimes|nullable|date',
         ]);
 
-        // Auto-set published_at when changing status to published
-        if (isset($validated['status']) && $validated['status'] === 'published' && ! $post->isPublished()) {
-            if (! isset($validated['published_at'])) {
-                $validated['published_at'] = now();
-            }
-        }
-
-        // Clear published_at when changing status to draft
-        if (isset($validated['status']) && $validated['status'] === 'draft') {
-            $validated['published_at'] = null;
-        }
-
-        $post->update($validated);
-
-        // Cache will be cleared automatically by PostObserver
+        $post = $this->postService->update($post, $validated);
 
         return response()->json([
             'message' => 'Post updated successfully',
@@ -167,18 +123,11 @@ class PostController extends Controller
     /**
      * Remove the specified post
      */
-    public function destroy(Request $request, Post $post)
+    public function destroy(Post $post)
     {
-        // Check if user owns the post or is admin
-        if ($post->author_id !== $request->user()->id && ! $request->user()->isAdmin()) {
-            return response()->json([
-                'message' => 'Forbidden. You can only delete your own posts.',
-            ], 403);
-        }
+        $this->authorize('delete', $post);
 
-        $post->delete();
-
-        // Cache will be cleared automatically by PostObserver
+        $this->postService->delete($post);
 
         return response()->json([
             'message' => 'Post deleted successfully',
@@ -190,7 +139,12 @@ class PostController extends Controller
      */
     public function myPosts(Request $request)
     {
-        $posts = $request->user()->posts()->latest()->paginate(15);
+        $posts = $this->postService->getByAuthor($request->user()->id, 15);
+
+        // Transform the data
+        $posts->setCollection(
+            $this->transformer->transformCollection($posts->getCollection())
+        );
 
         return response()->json($posts);
     }
@@ -220,77 +174,31 @@ class PostController extends Controller
             'per_page' => 'sometimes|integer|min:1|max:100',
         ]);
 
-        // Get parameters
-        $searchQuery = $validated['q'];
-        $status = $validated['status'] ?? null;
-        $publishedFrom = $validated['published_at']['from'] ?? null;
-        $publishedTo = $validated['published_at']['to'] ?? null;
-        $sortBy = $validated['sort_by'] ?? 'published_at';
-        $sortOrder = $validated['sort_order'] ?? 'desc';
-        $perPage = $validated['per_page'] ?? 25;
+        // Prepare search criteria
+        $criteria = [
+            'q' => $validated['q'],
+            'status' => $validated['status'] ?? null,
+            'published_from' => $validated['published_at']['from'] ?? null,
+            'published_to' => $validated['published_at']['to'] ?? null,
+            'sort_by' => $validated['sort_by'] ?? 'published_at',
+            'sort_order' => $validated['sort_order'] ?? 'desc',
+            'per_page' => $validated['per_page'] ?? 25,
+        ];
 
-        // Build query
-        $query = Post::query();
+        // Search using service
+        $posts = $this->postService->search($criteria);
 
-        // Case-insensitive search in title and body
-        $query->where(function ($q) use ($searchQuery) {
-            $q->whereRaw('LOWER(title) LIKE ?', ['%'.strtolower($searchQuery).'%'])
-                ->orWhereRaw('LOWER(body) LIKE ?', ['%'.strtolower($searchQuery).'%']);
-        });
-
-        // Filter by status
-        if ($status) {
-            $query->where('status', $status);
-        }
-
-        // Filter by published_at date range
-        if ($publishedFrom) {
-            $query->whereDate('published_at', '>=', $publishedFrom);
-        }
-        if ($publishedTo) {
-            $query->whereDate('published_at', '<=', $publishedTo);
-        }
-
-        // Load relationships and counts
-        $posts = $query->with([
-            'author:id,name,email',
-            'comments' => function ($query) {
-                $query->latest()->limit(1)->with('author:id,name');
-            },
-        ])
-            ->withCount('comments')
-            ->orderBy($sortBy, $sortOrder)
-            ->paginate($perPage);
-
-        // Transform the data to include required fields
-        $posts->getCollection()->transform(function ($post) {
-            $lastComment = $post->comments->first();
-
-            return [
-                'id' => $post->id,
-                'title' => $post->title,
-                'status' => $post->status,
-                'body' => $post->body,
-                'created_at' => $post->created_at,
-                'published_at' => $post->published_at,
-                'author' => [
-                    'name' => $post->author->name,
-                    'email' => $post->author->email,
-                ],
-                'comments_count' => $post->comments_count,
-                'last_comment' => $lastComment ? [
-                    'body' => $lastComment->body,
-                    'author_name' => $lastComment->author->name,
-                ] : null,
-            ];
-        });
+        // Transform the data
+        $posts->setCollection(
+            $this->transformer->transformCollection($posts->getCollection())
+        );
 
         return response()->json([
-            'query' => $searchQuery,
+            'query' => $criteria['q'],
             'filters' => [
-                'status' => $status,
-                'published_from' => $publishedFrom,
-                'published_to' => $publishedTo,
+                'status' => $criteria['status'],
+                'published_from' => $criteria['published_from'],
+                'published_to' => $criteria['published_to'],
             ],
             'results' => $posts,
         ]);

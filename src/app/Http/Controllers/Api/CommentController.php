@@ -5,16 +5,28 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
 use App\Models\Post;
+use App\Services\CommentService;
+use App\Transformers\CommentTransformer;
 use Illuminate\Http\Request;
 
 class CommentController extends Controller
 {
+    public function __construct(
+        private CommentService $commentService,
+        private CommentTransformer $transformer
+    ) {}
+
     /**
      * Display comments for a post
      */
     public function index(Post $post)
     {
-        $comments = $post->comments()->with('author:id,name,email')->latest()->paginate(20);
+        $comments = $this->commentService->getByPost($post->id, 20);
+
+        // Transform the data
+        $comments->setCollection(
+            $this->transformer->transformCollection($comments->getCollection())
+        );
 
         return response()->json($comments);
     }
@@ -24,14 +36,13 @@ class CommentController extends Controller
      */
     public function store(Request $request, Post $post)
     {
+        $this->authorize('create', Comment::class);
+
         $validated = $request->validate([
             'body' => 'required|string',
         ]);
 
-        $comment = $post->comments()->create([
-            'author_id' => $request->user()->id,
-            'body' => $validated['body'],
-        ]);
+        $comment = $this->commentService->create($request->user(), $post->id, $validated);
 
         return response()->json([
             'message' => 'Comment created successfully',
@@ -44,6 +55,8 @@ class CommentController extends Controller
      */
     public function show(Comment $comment)
     {
+        $this->authorize('view', $comment);
+
         return response()->json([
             'comment' => $comment->load(['author:id,name,email', 'post:id,title']),
         ]);
@@ -54,18 +67,13 @@ class CommentController extends Controller
      */
     public function update(Request $request, Comment $comment)
     {
-        // Check if user owns the comment or is admin
-        if ($comment->author_id !== $request->user()->id && ! $request->user()->isAdmin()) {
-            return response()->json([
-                'message' => 'Forbidden. You can only update your own comments.',
-            ], 403);
-        }
+        $this->authorize('update', $comment);
 
         $validated = $request->validate([
             'body' => 'required|string',
         ]);
 
-        $comment->update($validated);
+        $comment = $this->commentService->update($comment, $validated);
 
         return response()->json([
             'message' => 'Comment updated successfully',
@@ -76,16 +84,11 @@ class CommentController extends Controller
     /**
      * Remove the specified comment
      */
-    public function destroy(Request $request, Comment $comment)
+    public function destroy(Comment $comment)
     {
-        // Check if user owns the comment or is admin
-        if ($comment->author_id !== $request->user()->id && ! $request->user()->isAdmin()) {
-            return response()->json([
-                'message' => 'Forbidden. You can only delete your own comments.',
-            ], 403);
-        }
+        $this->authorize('delete', $comment);
 
-        $comment->delete();
+        $this->commentService->delete($comment);
 
         return response()->json([
             'message' => 'Comment deleted successfully',
