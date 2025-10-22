@@ -14,8 +14,8 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::with('user:id,name,email')->latest()->paginate(15);
-        
+        $posts = Post::with('author:id,name,email')->latest()->paginate(15);
+
         return response()->json($posts);
     }
 
@@ -45,7 +45,7 @@ class PostController extends Controller
 
         return response()->json([
             'message' => 'Post created successfully',
-            'post' => $post->load('user:id,name,email'),
+            'post' => $post->load('author:id,name,email'),
         ], 201);
     }
 
@@ -55,7 +55,7 @@ class PostController extends Controller
     public function show(Post $post)
     {
         return response()->json([
-            'post' => $post->load(['user:id,name,email', 'comments.user:id,name,email']),
+            'post' => $post->load(['author:id,name,email', 'comments.user:id,name,email']),
         ]);
     }
 
@@ -65,7 +65,7 @@ class PostController extends Controller
     public function update(Request $request, Post $post)
     {
         // Check if user owns the post or is admin
-        if ($post->user_id !== $request->user()->id && !$request->user()->isAdmin()) {
+        if ($post->author_id !== $request->user()->id && !$request->user()->isAdmin()) {
             return response()->json([
                 'message' => 'Forbidden. You can only update your own posts.',
             ], 403);
@@ -94,7 +94,7 @@ class PostController extends Controller
 
         return response()->json([
             'message' => 'Post updated successfully',
-            'post' => $post->load('user:id,name,email'),
+            'post' => $post->load('author:id,name,email'),
         ]);
     }
 
@@ -104,7 +104,7 @@ class PostController extends Controller
     public function destroy(Request $request, Post $post)
     {
         // Check if user owns the post or is admin
-        if ($post->user_id !== $request->user()->id && !$request->user()->isAdmin()) {
+        if ($post->author_id !== $request->user()->id && !$request->user()->isAdmin()) {
             return response()->json([
                 'message' => 'Forbidden. You can only delete your own posts.',
             ], 403);

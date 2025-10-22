@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('posts', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('author_id')->constrained('users')->onDelete('cascade');
             $table->string('title')->unique();
             $table->text('body');
             $table->enum('status', ['draft', 'published'])->default('draft');

@@ -8,18 +8,26 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Post extends Model
 {
-    protected $fillable = ['user_id', 'title', 'body', 'status', 'published_at'];
+    protected $fillable = ['author_id', 'title', 'body', 'status', 'published_at'];
 
     protected $casts = [
         'published_at' => 'datetime',
     ];
 
     /**
-     * Get the user that owns the post.
+     * Get the author (user) that owns the post.
+     */
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'author_id');
+    }
+
+    /**
+     * Alias for author relationship (for backwards compatibility).
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->author();
     }
 
     /**

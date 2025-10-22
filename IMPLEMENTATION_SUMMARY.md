@@ -8,8 +8,8 @@
 - ✅ `create_permissions_table.php` - Stores permissions (12 total)
 - ✅ `create_role_user_table.php` - Many-to-many relationship between users and roles
 - ✅ `create_permission_role_table.php` - Many-to-many relationship between roles and permissions
-- ✅ Updated `create_posts_table.php` - Added user_id, title (unique), body, status (enum), published_at (nullable) fields
-- ✅ Updated `create_comments_table.php` - Added user_id, post_id, content fields
+- ✅ Updated `create_posts_table.php` - Added author_id (FK to users), title (unique), body, status (enum), published_at (nullable) fields
+- ✅ Updated `create_comments_table.php` - Added author_id (FK to users), post_id, body fields
 
 ### 2. Models
 **Created/Updated:**

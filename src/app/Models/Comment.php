@@ -7,14 +7,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Comment extends Model
 {
-    protected $fillable = ['user_id', 'post_id', 'content'];
+    protected $fillable = ['author_id', 'post_id', 'body'];
 
     /**
-     * Get the user that owns the comment.
+     * Get the author (user) that owns the comment.
+     */
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'author_id');
+    }
+
+    /**
+     * Alias for author relationship (for backwards compatibility).
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->author();
     }
 
     /**

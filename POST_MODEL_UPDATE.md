@@ -8,6 +8,7 @@ The Post model, migration, and controller have been updated with the following f
 
 | Old Field | New Field | Type | Notes |
 |-----------|-----------|------|-------|
+| `user_id` | `author_id` | bigint (FK) | Renamed for semantic clarity |
 | `content` | `body` | text | Renamed for clarity |
 | `published` | `status` | enum('draft', 'published') | More flexible status system |
 | N/A | `published_at` | timestamp (nullable) | Track when post was published |
@@ -19,6 +20,7 @@ The Post model, migration, and controller have been updated with the following f
 
 **Before:**
 ```php
+$table->foreignId('user_id')->constrained()->onDelete('cascade');
 $table->string('title');
 $table->text('content');
 $table->boolean('published')->default(false);
@@ -26,6 +28,7 @@ $table->boolean('published')->default(false);
 
 **After:**
 ```php
+$table->foreignId('author_id')->constrained('users')->onDelete('cascade');
 $table->string('title')->unique();
 $table->text('body');
 $table->enum('status', ['draft', 'published'])->default('draft');
@@ -41,15 +44,31 @@ protected $fillable = ['user_id', 'title', 'content', 'published'];
 protected $casts = [
     'published' => 'boolean',
 ];
+
+public function user(): BelongsTo
+{
+    return $this->belongsTo(User::class);
+}
 ```
 
 **After:**
 ```php
-protected $fillable = ['user_id', 'title', 'body', 'status', 'published_at'];
+protected $fillable = ['author_id', 'title', 'body', 'status', 'published_at'];
 
 protected $casts = [
     'published_at' => 'datetime',
 ];
+
+public function author(): BelongsTo
+{
+    return $this->belongsTo(User::class, 'author_id');
+}
+
+// Alias for backwards compatibility
+public function user(): BelongsTo
+{
+    return $this->author();
+}
 ```
 
 **New Helper Methods Added:**
@@ -333,9 +352,11 @@ If you have production data, you'll need to create a migration to:
 - ✅ Analytics (know when content was published)
 
 ### 4. Field Naming
+- ✅ `author_id` is more semantic than `user_id` for posts (indicates authorship)
 - ✅ `body` is more semantic than `content` for blog posts
 - ✅ Follows common conventions (title + body)
 - ✅ Clearer distinction from other content types
+- ✅ Maintains backwards compatibility with `user()` relationship alias
 
 ## 🚀 Next Steps
 

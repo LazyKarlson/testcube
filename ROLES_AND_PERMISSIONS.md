@@ -325,10 +325,10 @@ Authorization: Bearer {token}
    - `id`, `permission_id`, `role_id`, `timestamps`
 
 5. **posts**
-   - `id`, `user_id`, `title` (unique), `body`, `status` (enum: draft/published), `published_at` (nullable), `timestamps`
+   - `id`, `author_id` (FK to users), `title` (unique), `body`, `status` (enum: draft/published), `published_at` (nullable), `timestamps`
 
 6. **comments**
-   - `id`, `user_id`, `post_id`, `content`, `timestamps`
+   - `id`, `author_id` (FK to users), `post_id`, `body`, `timestamps`
 
 ---
 
