@@ -10,11 +10,61 @@ use Illuminate\Support\Facades\Gate;
 class PostController extends Controller
 {
     /**
-     * Display a listing of posts
+     * Display a listing of posts with pagination and sorting
+     *
+     * Query parameters:
+     * - sort_by: 'published_at' (default), 'title', 'created_at'
+     * - sort_order: 'desc' (default), 'asc'
+     * - page: page number (default: 1)
+     * - per_page: items per page (default: 25, max: 100)
      */
-    public function index()
+    public function index(Request $request)
     {
-        $posts = Post::with('author:id,name,email')->latest()->paginate(15);
+        // Validate query parameters
+        $validated = $request->validate([
+            'sort_by' => 'sometimes|in:published_at,title,created_at',
+            'sort_order' => 'sometimes|in:asc,desc',
+            'per_page' => 'sometimes|integer|min:1|max:100',
+        ]);
+
+        // Get sorting parameters
+        $sortBy = $validated['sort_by'] ?? 'published_at';
+        $sortOrder = $validated['sort_order'] ?? 'desc';
+        $perPage = $validated['per_page'] ?? 25;
+
+        // Build query with relationships and counts
+        $posts = Post::with([
+            'author:id,name,email',
+            'comments' => function ($query) {
+                $query->latest()->limit(1)->with('author:id,name');
+            }
+        ])
+        ->withCount('comments')
+        ->orderBy($sortBy, $sortOrder)
+        ->paginate($perPage);
+
+        // Transform the data to include required fields
+        $posts->getCollection()->transform(function ($post) {
+            $lastComment = $post->comments->first();
+
+            return [
+                'id' => $post->id,
+                'title' => $post->title,
+                'status' => $post->status,
+                'body' => $post->body,
+                'created_at' => $post->created_at,
+                'published_at' => $post->published_at,
+                'author' => [
+                    'name' => $post->author->name,
+                    'email' => $post->author->email,
+                ],
+                'comments_count' => $post->comments_count,
+                'last_comment' => $lastComment ? [
+                    'body' => $lastComment->body,
+                    'author_name' => $lastComment->author->name,
+                ] : null,
+            ];
+        });
 
         return response()->json($posts);
     }

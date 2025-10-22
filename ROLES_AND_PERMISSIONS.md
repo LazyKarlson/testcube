@@ -143,7 +143,37 @@ Content-Type: application/json
 ```bash
 GET /api/posts
 Authorization: Bearer {token}
+
+# Query parameters (all optional):
+# - sort_by: published_at (default), title, created_at
+# - sort_order: desc (default), asc
+# - per_page: 25 (default), max 100
+# - page: 1 (default)
 ```
+
+**Response includes**:
+- Post details (title, status, body, created_at, published_at)
+- Author name and email
+- Comments count
+- Last comment body and author name
+- Pagination metadata
+
+**Examples**:
+```bash
+# Default (sorted by published_at desc, 25 per page)
+GET /api/posts
+
+# Sort by title ascending
+GET /api/posts?sort_by=title&sort_order=asc
+
+# Custom pagination
+GET /api/posts?per_page=50&page=2
+
+# Sort by creation date
+GET /api/posts?sort_by=created_at&sort_order=desc
+```
+
+**See detailed documentation**: `POSTS_LIST_ENDPOINT.md`
 
 #### Get Single Post (All authenticated users)
 ```bash
